@@ -1,9 +1,24 @@
+import os
+import glob
+import datetime
+
 from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
 import pandas_market_calendars as mcal
 import matplotlib.pyplot as plt
+
+def get_home_dir(repo_name='beat_market_analysis'):
+    cwd = os.getcwd()
+    cwd_list = cwd.split('/')
+    repo_position = [i for i, s in enumerate(cwd_list) if s == repo_name]
+    if len(repo_position) > 1:
+        print("error!  more than one intance of repo name in path")
+        return None
+
+    home_dir = '/'.join(cwd_list[:repo_position[0] + 1]) + '/'
+    return home_dir
 
 
 def get_historical_constituents():
@@ -54,18 +69,39 @@ def get_historical_constituents():
     # need to check that no tickers are used for multiple companies
 
 
-def load_sp600_files():
+def get_latest_daily_date():
+    # get latest date from daily scrapes
+    daily_files = glob.glob(get_home_dir() + 'data/investing.com/*.csv')
+    if len(daily_files) == 0:
+        return None
+
+    daily_dates = [pd.to_datetime(f.split('/')[-1].split('_')[-1].split('.')[0]) for f in daily_files]
+    last_daily = max(daily_dates)
+    return last_daily
+
+
+def load_sp600_files(date='latest'):
     """
     loads data from files from investing.com
     https://www.investing.com/indices/s-p-600-components
+
+    date should be a string, either 'latest' to use the latest available date, or
+    a specific date like YYYY-mm-dd
     """
-    # TODO: get latest updated files or files with latest date
-    latest_date = '7-18-2018'
-    folder = '../sp600_constituent_lists/investing.com/'
+    folder = get_home_dir() + 'data/investing.com/'
     dfs = []
-    labels = ['price', 'performance', 'technical', 'fundamentals']
+    labels = ['price', 'performance', 'technical', 'fundamental']
+    if date == 'latest':
+        file_date = get_latest_daily_date().strftime('%Y-%m-%d')
+        if file_date is None:
+            print('no files to load!')
+            return None
+    else:
+        file_date = date
+
     for l in labels:
-        filename = 'S&P_600_Components_{}_7-18-2018.csv'.format(l)
+        filename = 'sp600_{}_{}.csv'.format(l, file_date)
+        print(filename)
         dfs.append(pd.read_csv(folder + filename))
 
     # ensure the names and symbols are identical
@@ -152,23 +188,24 @@ def get_current_smallest_mkt_cap(df, n=20):
     """
     sorted_df = df.sort_values(by='Market Cap')
 
-# TODO: scrape investing.com for files
+
+# import sys
+# sys.path.append('../stock_prediction/code')
+# import dl_quandl_EOD as dlq
+#
+# all_stocks_dfs = dlq.load_stocks()
+#
+#
+# # get market cap of each stock in index for each unique date
+# # need to get more historical data from wrds
+# market_caps = OrderedDict()
+# unique_dates = sorted(pd.concat([sp600_df['from'], sp600_df['thru']]).unique())[:-1]
+# for d in unique_dates:
+#     mcaps = []
+#     for ticker in current_tickers[d]:
+#         mcaps.append(all_stocks_dfs[ticker][''])
+#     market_caps[d] =
 
 
-
-import sys
-sys.path.append('../stock_prediction/code')
-import dl_quandl_EOD as dlq
-
-all_stocks_dfs = dlq.load_stocks()
-
-
-# get market cap of each stock in index for each unique date
-# need to get more historical data from wrds
-market_caps = OrderedDict()
-unique_dates = sorted(pd.concat([sp600_df['from'], sp600_df['thru']]).unique())[:-1]
-for d in unique_dates:
-    mcaps = []
-    for ticker in current_tickers[d]:
-        mcaps.append(all_stocks_dfs[ticker][''])
-    market_caps[d] =
+if __name__ == '__main__':
+    df = load_sp600_files()
