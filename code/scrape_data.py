@@ -17,6 +17,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import TimeoutException
 
 from fake_useragent import UserAgent
 import numpy as np
@@ -64,22 +65,19 @@ def setup_driver():
     # prevent broken pipe errors
     # https://stackoverflow.com/a/13974451/4549682
     driver.implicitly_wait(5)
-    # driver.set_page_load_timeout(10)
+    # barchart.com takes a long time to load; I think it's ads
+    driver.set_page_load_timeout(10)
     return driver
 
-def download_daily_data(driver=None, date=None):
-    """
-    checks which files already exist, then downloads remaining files to bring up to current
 
-    or if 'date' supplied (i.e. 2018-04-12, yyyy-mm-dd, as a string), then downloads for that specific date
-    """
-    if driver is None:
-        driver = setup_driver()
-        driver = log_in(driver)
-        time.sleep(3)  # wait for login to complete...could also use some element detection
+def sign_in(driver, source='barchart.com'):
+    if source == 'investing.com':
+        sign_in_investing_com(driver)
+    elif source == 'barchart.com':
+        sign_in_barchart_com(driver)
 
 
-def sign_in(driver):
+def sign_in_investing_com(driver):
     driver.get('https://www.investing.com')
     # if popup appears, close it -- seems to only happen when not signed in
     # seems to only appear after moving mouse around on page and waiting a sec
@@ -103,6 +101,19 @@ def sign_in(driver):
     popup.find_element_by_link_text('Sign In').click()
 
 
+def sign_in_barchart_com(driver):
+    driver.get('https://www.barchart.com/login')
+    email = os.environ.get('barchart_username')
+    password = os.environ.get('barchart_pass')
+    driver.find_element_by_name('email').send_keys(email)
+    driver.find_element_by_name('password').send_keys(password)
+    time.sleep(1.2 + np.random.random())
+    try:
+        driver.find_element_by_xpath('//button[text()="Log In"]').click()
+    except TimeoutException:
+        pass
+
+
 def wait_for_data_download(filename=cu.get_home_dir() + 'S&P 600 Components.csv'):
     """
     waits for a file (filename) to exist; when it does, ends waiting
@@ -113,7 +124,7 @@ def wait_for_data_download(filename=cu.get_home_dir() + 'S&P 600 Components.csv'
     return
 
 
-def check_if_files_exist():
+def check_if_files_exist(source='barchart.com'):
     """
     """
     home_dir = cu.get_home_dir()
@@ -121,11 +132,15 @@ def check_if_files_exist():
 
     todays_date = datetime.datetime.today().strftime('%Y-%m-%d')
     # check if todays data has already been downloaded
-    latest_date = cu.get_latest_daily_date().strftime('%Y-%m-%d')
+    latest_date = cu.get_latest_daily_date()
+    if latest_date is None:
+        return False
+
+    latest_date = latest_date.strftime('%Y-%m-%d')
     if latest_date == todays_date:
         # check that all 4 files are there
         for d in data_list:
-            if not os.path.exists(home_dir + 'data/investing.com/sp600_{}_'.format(d) + todays_date + '.csv'):
+            if not os.path.exists(home_dir + 'data/{}/sp600_{}_'.format(source, d) + todays_date + '.csv'):
                 return False
 
         print("today's data is already downloaded")
@@ -134,9 +149,9 @@ def check_if_files_exist():
     return False
 
 
-def download_sp600_data(driver):
+def download_sp600_data(driver, source='barchart.com'):
     """
-    downloads sp600 data from investing.com
+    downloads sp600 data from investing.com or barchart.com
     """
     if check_if_files_exist():
         return
@@ -144,10 +159,18 @@ def download_sp600_data(driver):
     print('data not up to date; downloading')
 
     home_dir = cu.get_home_dir()
+
+    if source == 'investing.com':
+        download_investing_com(driver)
+    elif source == 'barchart.com':
+        download_barchart_com(driver)
+
+
+def download_investing_com(driver):
+    driver.get('https://www.investing.com/indices/s-p-600-components')
+
     data_list = ['price', 'performance', 'technical', 'fundamental']
     todays_date = datetime.datetime.today().strftime('%Y-%m-%d')
-
-    driver.get('https://www.investing.com/indices/s-p-600-components')
 
     for d, next_d in zip(data_list, data_list[1:] + [None]):
         print('downloading {} data...'.format(d))
@@ -166,8 +189,44 @@ def download_sp600_data(driver):
         shutil.move(home_dir + 'S&P 600 Components.csv', home_dir + 'data/investing.com/sp600_{}_'.format(d) + todays_date + '.csv')
 
 
+def download_barchart_com(driver):
+    todays_date = datetime.datetime.today().strftime('%Y-%m-%d')
+    todays_date_bc = datetime.datetime.today().strftime('%m-%d-%Y')
+    data_list = ['price', 'technical', 'performance', 'fundamental']
+    link_list = ['main', 'technical', 'performance', 'fundamental']
+    home_dir = cu.get_home_dir()
+    for link, d in zip(link_list, data_list):
+        try:
+            driver.get('https://www.barchart.com/stocks/indices/sp/sp600?viewName=' + link)
+        except TimeoutException:
+            pass
+
+        driver.find_element_by_class_name('toolbar-button.download').click()
+        filename = home_dir + 'sp-600-index-{}.csv'.format(todays_date_bc)
+        wait_for_data_download(filename)
+        filepath_dst = home_dir + 'data/barchart.com/sp600_{}_'.format(d) + todays_date + '.csv'
+        shutil.move(filename, filepath_dst)
+        time.sleep(1.1 + np.random.random())
+
+
+
+
 if __name__ == '__main__':
     if not check_if_files_exist():
         driver = setup_driver()
-        sign_in(driver)
-        download_sp600_data(driver)
+        # from selenium.webdriver.support.ui import WebDriverWait
+        # from selenium.webdriver.support import expected_conditions as EC
+        # from selenium.webdriver.common.by import By
+        # # https://stackoverflow.com/a/44504132/4549682
+        # wait = WebDriverWait(driver, 20)
+        # driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        # try:
+        #     driver.get('https://www.barchart.com/stocks/indices/sp/sp600?viewName=' + 'main')
+        # wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'toolbar-button.download')))
+        # driver.execute_script("window.stop();")
+
+
+
+        source = 'barchart.com'
+        sign_in(driver, source=source)
+        download_sp600_data(driver, source=source)

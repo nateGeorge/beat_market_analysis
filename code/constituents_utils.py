@@ -25,7 +25,7 @@ def get_historical_constituents():
     """
     gets historical constituents from WRDS file
     """
-    df = pd.read_csv('historical_constituents.csv', parse_dates=['from', 'thru'], infer_datetime_format=True)
+    df = pd.read_csv(get_home_dir() + 'data/wrds/historical_constituents_2018-06-26.csv', parse_dates=['from', 'thru'], infer_datetime_format=True)
 
     # only use s&p600 for now
     sp600_df = df[df['conm'] == 'S&P Smallcap 600 Index']
@@ -49,29 +49,34 @@ def get_historical_constituents():
     constituent_tickers = OrderedDict()
     lengths = []
 
+    # TODO: multiprocessing to speed up
     for d in date_range:
         # if date is within stock's from and thru, add to list
         # stocks were removed on 'thru', so if it is the 'thru' date, then shouldn't be included
         # but stocks were added on 'from' date, so include stocks on 'from' date
         # use dataframe masking
+        date_string = d.strftime('%Y-%m-%d')
         current_stocks = sp600_df[(sp600_df['from'] <= d) & (sp600_df['thru'] > d)]
         current_companies = current_stocks['co_conm']  # company names
         current_tickers = current_stocks['co_tic']  # company tickers
-        constituent_companies[d] = current_companies
-        constituent_tickers[d] = current_tickers
+        constituent_companies[date_string] = current_companies
+        constituent_tickers[date_string] = current_tickers
         lengths.append(current_tickers.shape[0])
 
-    pd.value_counts(lengths)
+    # look at number of constituents as a histogram; mostly 600 but a few above and below
+    # pd.value_counts(lengths)
     # plt.hist(lengths)
     # plt.show()
 
     # TODO:
     # need to check that no tickers are used for multiple companies
 
+    return constituent_companies, constituent_tickers
 
-def get_latest_daily_date():
+
+def get_latest_daily_date(source='barchart.com'):
     # get latest date from daily scrapes
-    daily_files = glob.glob(get_home_dir() + 'data/investing.com/*.csv')
+    daily_files = glob.glob(get_home_dir() + 'data/{}/*.csv'.format(source))
     if len(daily_files) == 0:
         return None
 
@@ -80,7 +85,7 @@ def get_latest_daily_date():
     return last_daily
 
 
-def load_sp600_files(date='latest'):
+def load_sp600_files(date='latest', source='barchart.com'):
     """
     loads data from files from investing.com
     https://www.investing.com/indices/s-p-600-components
@@ -88,11 +93,11 @@ def load_sp600_files(date='latest'):
     date should be a string, either 'latest' to use the latest available date, or
     a specific date like YYYY-mm-dd
     """
-    folder = get_home_dir() + 'data/investing.com/'
+    folder = get_home_dir() + 'data/{}/'.format(source)
     dfs = []
     labels = ['price', 'performance', 'technical', 'fundamental']
     if date == 'latest':
-        file_date = get_latest_daily_date().strftime('%Y-%m-%d')
+        file_date = get_latest_daily_date(source=source).strftime('%Y-%m-%d')
         if file_date is None:
             print('no files to load!')
             return None
@@ -115,37 +120,53 @@ def load_sp600_files(date='latest'):
 
     for d in dfs:
         d.set_index('Symbol', inplace=True)
+        if source == 'barchart.com':
+            d = d[:-1]  # the last row has some info about barchart.com
 
     # remove 'Name' column from all but first df
     for d in dfs[1:]:
         d.drop('Name', axis=1, inplace=True)
+        if source == 'barchart.com':
+            if 'Last' in d.columns:
+                d.drop('Last', axis=1, inplace=True)
 
-    # add prefixes so 'Daily' is different for performance and technical dfs
-    dfs[1].columns = ['perf ' + c for c in dfs[1].columns]
-    dfs[2].columns = ['tech ' + c for c in dfs[2].columns]
+    if source == 'investing.com':
+        # add prefixes so 'Daily' is different for performance and technical dfs
+        dfs[1].columns = ['perf ' + c for c in dfs[1].columns]
+        dfs[2].columns = ['tech ' + c for c in dfs[2].columns]
 
     df = pd.concat(dfs, axis=1)
     # 'Time' column seems to be just year/month
     df.drop('Time', axis=1, inplace=True)
 
     # convert k to 1000, M to 1e6, and B to 1.9
-    for c in ['Vol.', 'Average Vol. (3m)', 'Market Cap', 'Revenue']:
-        df[c] = df[c].apply(lambda x: clean_abbreviations(x))
+    if source == 'barchart.com':
+        # cols = ['Volume', '']
+        # does not seem to have the same abbbrevations anywhere
+        pass
+    elif source == 'investing.com':
+        for c in ['Vol.', 'Average Vol. (3m)', 'Market Cap', 'Revenue']:
+            df[c] = df[c].apply(lambda x: clean_abbreviations(x))
 
     # clean up % columns
-    for c in ['Chg. %', 'perf Daily', 'perf 1 Week', 'perf 1 Month', 'perf YTD', 'perf 1 Year', 'perf 3 Years']:
+    if source == 'barchart.com':
+        cols = ['%Chg', 'Wtd Alpha', 'YTD %Chg', '1M %Chg', '3M %Chg', '52W %Chg', '20D Rel Str', '20D His Vol', 'Div Yield(a)']
+    elif source == 'investing.com':
+        cols = ['Chg. %', 'perf Daily', 'perf 1 Week', 'perf 1 Month', 'perf YTD', 'perf 1 Year', 'perf 3 Years']
+    for c in cols:
         df[c] = df[c].apply(lambda x: clean_pcts(x))
 
-    # maps technical indicators to numbers for sorting
-    conversion_dict = {'Strong Buy': 2,
-                        'Buy': 1,
-                        'Neutral': 0,
-                        'Sell': -1,
-                        'Strong Sell': -2}
+    if source == 'investing.com':
+        # maps technical indicators to numbers for sorting
+        conversion_dict = {'Strong Buy': 2,
+                            'Buy': 1,
+                            'Neutral': 0,
+                            'Sell': -1,
+                            'Strong Sell': -2}
 
-    for k, v in conversion_dict.items():
-        for c in dfs[2].columns:
-            df.at[df[c] == k, c] = v
+        for k, v in conversion_dict.items():
+            for c in dfs[2].columns:
+                df.at[df[c] == k, c] = v
 
     return df
 
@@ -154,9 +175,11 @@ def clean_pcts(x):
     """
     the 'Chg. %' column and others have entries like +1.24%
     """
-    # if not enough data, will be '-'
-    if x == '-':
+    # if not enough data, will be '-' with investing.com
+    if x == '-' or pd.isnull(x):
         return np.nan
+    elif x == 'unch':
+        return float(0)
 
     new_x = x.replace('+', '')
     new_x = new_x.replace('%', '')
@@ -209,3 +232,9 @@ def get_current_smallest_mkt_cap(df, n=20):
 
 if __name__ == '__main__':
     df = load_sp600_files()
+    constituent_companies, constituent_tickers = get_historical_constituents()
+    # get list of tickers from latest WRDS data
+    wrds_tickers = constituent_tickers['2018-06-26']
+    wrds_set = set(wrds_tickers)
+    current_set = set(df.index)
+    current_set.difference(wrds_set)
