@@ -181,6 +181,23 @@ def check_if_files_exist(source='barchart.com'):
     return False
 
 
+def check_if_index_files_exist(index='IJR'):
+    home_dir = cu.get_home_dir()
+    latest_market_date = get_last_open_trading_day()
+    latest_index_date = cu.get_latest_index_date(index)
+    if latest_index_date is None:
+        print('no files exist for ' + index)
+        return False
+
+    latest_index_date = latest_index_date.strftime('%Y-%m-%d')
+    if latest_index_date == latest_market_date:
+        print('latest data already downloaded for ' + index)
+        return True
+    else:
+        print('data not up to date for ' + index)
+        return False
+
+
 def download_sp600_data(driver, source='barchart.com'):
     """
     downloads sp600 data from investing.com or barchart.com
@@ -316,12 +333,41 @@ def download_vioo_holdings(driver):
     shutil.move(src_filename, dst_filename)
 
 
+def daily_updater(driver):
+    """
+    checks if any new files to download, if so, downloads them
+    """
+    while True:
+        today_utc = pd.to_datetime('now')
+        today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
+        for source in ['barchart.com', 'investing.com']:
+            if not check_if_files_exist(source=source):
+                if today_ny.hour >= 20:
+                    print('downloading update for ' + source)
+                    sign_in(driver, source=source)
+                    download_sp600_data(driver, source=source)
+
+        for index in ['IJR', 'SLY', 'VIOO']:
+            if not check_if_index_files_exist(index):
+                if today_ny.hour >= 20:
+                    print('downloading update for ' + index)
+                    if index == 'IJR':
+                        download_ijr_holdings(driver)
+                    elif index == 'SLY':
+                        download_sly_holdings(driver)
+                    elif index == 'VIOO':
+                        download_vioo_holdings(driver)
+
+        print('sleeping 1h...')
+        time.sleep(3600)
 
 
 if __name__ == '__main__':
     driver = setup_driver()
+    daily_updater(driver)
 
-    for source in ['barchart.com', 'investing.com']:
-        if not check_if_files_exist(source=source):
-            sign_in(driver, source=source)
-            download_sp600_data(driver, source=source)
+
+    # for source in ['barchart.com', 'investing.com']:
+    #     if not check_if_files_exist(source=source):
+    #         sign_in(driver, source=source)
+    #         download_sp600_data(driver, source=source)

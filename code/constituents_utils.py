@@ -227,6 +227,8 @@ def get_current_smallest_mkt_cap(df, n=20):
     """
     using df from investing.com and the load_sp600_files function,
     gets the n number of smallest market-cap stocks
+
+    should use barchart.com or wrds as source of constituents
     """
     sorted_df = df.sort_values(by='Market Cap')
     return sorted_df.iloc[:n].index
@@ -312,6 +314,7 @@ def load_vioo_holdings():
 if __name__ == '__main__':
     constituent_companies, constituent_tickers = get_historical_constituents_wrds()
     # # get list of tickers from latest WRDS data
+    # 6-26-2018 was last time it was downloaded
     wrds_tickers = constituent_tickers['2018-06-26']
     wrds_set = set(wrds_tickers)
     ijr = load_ijr_holdings()
@@ -329,6 +332,12 @@ if __name__ == '__main__':
     current_set = set(df.index)
     current_set.difference(wrds_set)
     wrds_set.difference(current_set)
+
+    # VIOO seems to be slower to remove companies that are not in the index;
+    # companies that are not in the current set from barchart.com are only in vioo
+
+    # overall, barchart seems to be a pretty good source
+
     # sorted_df = df.sort_values(by='Market Cap')
     # smallest = get_current_smallest_mkt_cap(df)
     # print(smallest)
