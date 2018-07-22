@@ -27,6 +27,8 @@ import constituents_utils as cu
 
 # for headless browser mode with FF
 # http://scraping.pro/use-headless-firefox-scraping-linux/
+# main thing to do is install this first:
+# sudo apt-get install xvfb
 from pyvirtualdisplay import Display
 display = Display(visible=0, size=(800, 600))
 display.start()
