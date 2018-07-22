@@ -21,7 +21,7 @@ def get_home_dir(repo_name='beat_market_analysis'):
     return home_dir
 
 
-def get_historical_constituents():
+def get_historical_constituents_wrds():
     """
     gets historical constituents from WRDS file
     """
@@ -85,6 +85,20 @@ def get_latest_daily_date(source='barchart.com'):
     return last_daily
 
 
+def get_latest_index_date(ticker='IJR'):
+    # get latest date from daily scrapes
+    extension = 'csv'
+    if ticker == 'SLY':
+        extension = 'xls'
+    daily_files = glob.glob(get_home_dir() + 'data/index_funds/{}/*.{}'.format(ticker, extension))
+    if len(daily_files) == 0:
+        return None
+
+    daily_dates = [pd.to_datetime(f.split('/')[-1].split('_')[-1].split('.')[0]) for f in daily_files]
+    last_daily = max(daily_dates)
+    return last_daily
+
+
 def load_sp600_files(date='latest', source='barchart.com'):
     """
     loads data from files from investing.com
@@ -107,7 +121,10 @@ def load_sp600_files(date='latest', source='barchart.com'):
     for l in labels:
         filename = 'sp600_{}_{}.csv'.format(l, file_date)
         print(filename)
-        dfs.append(pd.read_csv(folder + filename))
+        if source == 'barchart.com':
+            dfs.append(pd.read_csv(folder + filename, skipfooter=1))
+        elif source == 'investing.com':
+            dfs.append(pd.read_csv(folder + filename))
 
     # ensure the names and symbols are identical
     eq01 = dfs[0][['Name', 'Symbol']].equals(dfs[1][['Name', 'Symbol']])
@@ -121,7 +138,7 @@ def load_sp600_files(date='latest', source='barchart.com'):
     for d in dfs:
         d.set_index('Symbol', inplace=True)
         if source == 'barchart.com':
-            d = d[:-1]  # the last row has some info about barchart.com
+            d = d[:-2]  # the last row has some info about barchart.com
 
     # remove 'Name' column from all but first df
     for d in dfs[1:]:
@@ -141,9 +158,9 @@ def load_sp600_files(date='latest', source='barchart.com'):
 
     # convert k to 1000, M to 1e6, and B to 1.9
     if source == 'barchart.com':
-        # cols = ['Volume', '']
-        # does not seem to have the same abbbrevations anywhere
-        pass
+        # just need to rename the column, the data is not $K, just $
+        df['Market Cap'] = df['Market Cap, $K']
+        df.drop('Market Cap, $K', axis=1, inplace=True)
     elif source == 'investing.com':
         for c in ['Vol.', 'Average Vol. (3m)', 'Market Cap', 'Revenue']:
             df[c] = df[c].apply(lambda x: clean_abbreviations(x))
@@ -180,6 +197,8 @@ def clean_pcts(x):
         return np.nan
     elif x == 'unch':
         return float(0)
+    elif type(x) == float:
+        return x
 
     new_x = x.replace('+', '')
     new_x = new_x.replace('%', '')
@@ -210,6 +229,66 @@ def get_current_smallest_mkt_cap(df, n=20):
     gets the n number of smallest market-cap stocks
     """
     sorted_df = df.sort_values(by='Market Cap')
+    return sorted_df.iloc[:n].index
+
+
+def load_ijr_holdings():
+    latest_date = get_latest_index_date(ticker='IJR')
+    if latest_date is None:
+        print('no files')
+        return
+
+    filename = get_home_dir() + 'data/index_funds/IJR/IJR_holdings_' + latest_date.strftime('%Y-%m-%d') + '.csv'
+    df = pd.read_csv(filename, skiprows=10)
+    df = df[df['Asset Class'] == 'Equity']
+    for c in ['Shares', 'Market Value', 'Notional Value']:
+        df[c] = df[c].apply(lambda x: x.replace(',', '')).astype(float)
+
+    df['Price'] = df['Price'].astype(float)
+
+    df.set_index('Ticker', inplace=True)
+
+    return df
+
+
+def load_sly_holdings():
+    latest_date = get_latest_index_date(ticker='SLY')
+    if latest_date is None:
+        print('no files')
+        return
+
+    filename = get_home_dir() + 'data/index_funds/SLY/SLY_holdings_' + latest_date.strftime('%Y-%m-%d') + '.xls'
+    df = pd.read_excel(filename, skiprows=3, skipfooter=11)
+
+    # remove non-equities
+    df = df[df['Identifier'] != 'Unassigned']
+
+    df.set_index('Identifier', inplace=True)
+
+    return df
+
+
+def load_vioo_holdings():
+    latest_date = get_latest_index_date(ticker='VIOO')
+    if latest_date is None:
+        print('no files')
+        return
+
+    filename = get_home_dir() + 'data/index_funds/VIOO/VIOO_holdings_' + latest_date.strftime('%Y-%m-%d') + '.csv'
+    df = pd.read_csv(filename, skiprows=4)
+    df.drop(['Unnamed: 0', 'Unnamed: 10'], axis=1, inplace=True)
+    missing_row_idx = np.where(df.isna().sum(axis=1) == df.shape[1])[0][0]
+    df = df.iloc[:missing_row_idx]
+    df.drop('Security depository receipt type', axis=1, inplace=True)
+    df['Shares'] = df['Shares'].apply(lambda x: x.replace(',', '')).astype(float)
+    df['Market value'] = df['Market value'].apply(lambda x: x.replace('$', '').replace(',', '')).astype(float)
+    df['% of fund*'] = df['% of fund*'].astype(float)
+    df['SEDOL'] = df['SEDOL'].apply(lambda x: x.replace('=', '').replace('"', ''))
+    df['Ticker'] = df['Ticker'].apply(lambda x: x.strip())
+
+    df.set_index('Ticker', inplace=True)
+
+    return df
 
 
 # import sys
@@ -231,10 +310,25 @@ def get_current_smallest_mkt_cap(df, n=20):
 
 
 if __name__ == '__main__':
-    df = load_sp600_files()
-    constituent_companies, constituent_tickers = get_historical_constituents()
-    # get list of tickers from latest WRDS data
+    constituent_companies, constituent_tickers = get_historical_constituents_wrds()
+    # # get list of tickers from latest WRDS data
     wrds_tickers = constituent_tickers['2018-06-26']
     wrds_set = set(wrds_tickers)
+    ijr = load_ijr_holdings()
+    sly = load_sly_holdings()
+    vioo = load_vioo_holdings()
+    ijr_set = set(ijr.index)
+    sly_set = set(sly.index)
+    vioo_set = set(vioo.index)
+    # all currently have at least 3 differences -- ijr seems to differ the most
+    ijr_set.difference(wrds_set)
+    sly_set.difference(wrds_set)
+    vioo_set.difference(wrds_set)
+
+    df = load_sp600_files()
     current_set = set(df.index)
     current_set.difference(wrds_set)
+    wrds_set.difference(current_set)
+    # sorted_df = df.sort_values(by='Market Cap')
+    # smallest = get_current_smallest_mkt_cap(df)
+    # print(smallest)
