@@ -1,4 +1,3 @@
-# would need to use selenium to get this to work...meh, just use a multidownloader for chrome
 # core
 import os
 import time
@@ -7,7 +6,6 @@ import glob
 import calendar
 import datetime
 import shutil
-
 
 # installed
 import requests as req
@@ -24,13 +22,14 @@ import numpy as np
 import pandas as pd
 import pandas_market_calendars as mcal
 
+# custom
 import constituents_utils as cu
 
 # for headless browser mode with FF
 # http://scraping.pro/use-headless-firefox-scraping-linux/
-# from pyvirtualdisplay import Display
-# display = Display(visible=0, size=(800, 600))
-# display.start()
+from pyvirtualdisplay import Display
+display = Display(visible=0, size=(800, 600))
+display.start()
 
 
 def make_dirs(path):
