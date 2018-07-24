@@ -30,7 +30,7 @@ import constituents_utils as cu
 # main thing to do is install this first:
 # sudo apt-get install xvfb
 from pyvirtualdisplay import Display
-display = Display(visible=0, size=(800, 600))
+display = Display(visible=0, size=(1920, 1080))
 display.start()
 
 
@@ -131,7 +131,10 @@ def sign_in_investing_com(driver):
     # click the "Sign In" button
     popup = driver.find_element_by_id('loginPopup')
     time.sleep(1.27 + np.random.random())
-    popup.find_element_by_link_text('Sign In').click()
+    try:
+        popup.find_element_by_link_text('Sign In').click()
+    except TimeoutException:
+        pass
 
 
 def sign_in_barchart_com(driver):
@@ -206,7 +209,7 @@ def download_sp600_data(driver, source='barchart.com'):
     if check_if_files_exist(source=source):
         return
 
-    print('data not up to date; downloading')
+    print('data not up to date for {}; downloading'.format(source))
 
     home_dir = cu.get_home_dir()
 
@@ -338,26 +341,37 @@ def daily_updater(driver):
     """
     checks if any new files to download, if so, downloads them
     """
+    def dl_source(source):
+        print('downloading update for ' + source)
+        sign_in(driver, source=source)
+        download_sp600_data(driver, source=source)
+
+    def dl_idx(index):
+        print('downloading update for ' + index)
+        if index == 'IJR':
+            download_ijr_holdings(driver)
+        elif index == 'SLY':
+            download_sly_holdings(driver)
+        elif index == 'VIOO':
+            download_vioo_holdings(driver)
+
     while True:
         today_utc = pd.to_datetime('now')
         today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
         for source in ['barchart.com', 'investing.com']:
             if not check_if_files_exist(source=source):
-                if today_ny.hour >= 20:
-                    print('downloading update for ' + source)
-                    sign_in(driver, source=source)
-                    download_sp600_data(driver, source=source)
+                if today_ny.date() != cu.get_latest_daily_date(source).date():
+                    dl_source(source)
+                elif today_ny.hour >= 20:
+                    dl_source(source)
 
         for index in ['IJR', 'SLY', 'VIOO']:
             if not check_if_index_files_exist(index):
+                latest_index_date = cu.get_latest_index_date(index)
+                if latest_index_date.date() != today_ny.date():
+                    dl_idx(index)
                 if today_ny.hour >= 20:
-                    print('downloading update for ' + index)
-                    if index == 'IJR':
-                        download_ijr_holdings(driver)
-                    elif index == 'SLY':
-                        download_sly_holdings(driver)
-                    elif index == 'VIOO':
-                        download_vioo_holdings(driver)
+                    dl_idx(index)
 
         print('sleeping 1h...')
         time.sleep(3600)
