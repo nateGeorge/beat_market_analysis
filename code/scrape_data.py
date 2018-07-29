@@ -8,11 +8,12 @@ import datetime
 import shutil
 
 # installed
+import pytz
 import requests as req
 from bs4 import BeautifulSoup as bs
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
@@ -146,6 +147,12 @@ def sign_in_barchart_com(driver):
     time.sleep(1.2 + np.random.random())
     try:
         driver.find_element_by_xpath('//button[text()="Log In"]').click()
+    except ElementClickInterceptedException:
+        # classname: reveal-modal-bg fade in
+        driver.find_element_by_xpath('/html/body/div[9]/div/div/div[3]/div/div[1]/div/a').click()
+        time.sleep(2)
+    try:
+        driver.find_element_by_xpath('//button[text()="Log In"]').click()
     except TimeoutException:
         pass
 
@@ -251,6 +258,9 @@ def download_barchart_com(driver):
     latest_market_date = get_last_open_trading_day()
     # date to match barchart downloaded filename
     todays_date_bc = datetime.datetime.today().strftime('%m-%d-%Y')
+    # need todays date EST for download filename
+    tz = pytz.timezone('US/Eastern')
+    todays_date_eastern = datetime.datetime.now(tz).strftime('%m-%d-%Y')
     data_list = ['price', 'technical', 'performance', 'fundamental']
     link_list = ['main', 'technical', 'performance', 'fundamental']
     home_dir = cu.get_home_dir()
@@ -261,7 +271,8 @@ def download_barchart_com(driver):
             pass
 
         driver.find_element_by_class_name('toolbar-button.download').click()
-        filename = home_dir + 'sp-600-index-{}.csv'.format(todays_date_bc)
+        filename = home_dir + 'sp-600-index-{}.csv'.format(todays_date_eastern)
+        print('waiting for...' + filename)
         wait_for_data_download(filename)
         filepath_dst = home_dir + 'data/barchart.com/sp600_{}_'.format(d) + latest_market_date + '.csv'
         shutil.move(filename, filepath_dst)
