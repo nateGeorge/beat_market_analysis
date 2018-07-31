@@ -73,9 +73,17 @@ def setup_driver():
     # download once, check 'don't ask again' and 'save'
     # also change downloads folder to ticker_data within git repo
     # then file path to profile, and use here:
-    prof_path = '/home/nate/.mozilla/firefox/exzvq4ez.investing.com' # investing.com was the name of the profile
-    # saves to /home/nate/github/beat_market_analysis folder by default
-    profile = webdriver.FirefoxProfile(prof_path)
+    # investing.com was the name of the profile]
+    prof_paths = ['/home/nate/.mozilla/firefox/exzvq4ez.investing.com',
+                # work computer path
+                '/home/nate/.mozilla/firefox/i12g875t.investing.com']
+    for p in prof_paths:
+        try:
+            prof_path = p
+        # saves to /home/nate/github/beat_market_analysis folder by default
+            profile = webdriver.FirefoxProfile(prof_path)
+        except FileNotFoundError:
+            pass
     # auto-download unknown mime types:
     # http://forums.mozillazine.org/viewtopic.php?f=38&t=2430485
     # set to text/csv and semicolon-separated any other file types
