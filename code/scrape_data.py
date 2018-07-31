@@ -84,6 +84,7 @@ def setup_driver():
         # saves to /home/nate/github/beat_market_analysis folder by default
             profile = webdriver.FirefoxProfile(prof_path)
             found_prof = True
+            print('found profile at', p)
         except FileNotFoundError:
             pass
 
