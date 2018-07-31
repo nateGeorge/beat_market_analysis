@@ -77,13 +77,20 @@ def setup_driver():
     prof_paths = ['/home/nate/.mozilla/firefox/exzvq4ez.investing.com',
                 # work computer path
                 '/home/nate/.mozilla/firefox/i12g875t.investing.com']
+    found_prof = False
     for p in prof_paths:
         try:
             prof_path = p
         # saves to /home/nate/github/beat_market_analysis folder by default
             profile = webdriver.FirefoxProfile(prof_path)
+            found_prof = True
         except FileNotFoundError:
             pass
+
+    if found_prof == False:
+        print('ERROR: no profile could be found, exiting')
+        exit()
+
     # auto-download unknown mime types:
     # http://forums.mozillazine.org/viewtopic.php?f=38&t=2430485
     # set to text/csv and semicolon-separated any other file types
