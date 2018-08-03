@@ -13,7 +13,7 @@ import requests as req
 from bs4 import BeautifulSoup as bs
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
@@ -59,6 +59,13 @@ def get_last_open_trading_day():
     open_days = ndq.schedule(start_date=today_utc - pd.Timedelta(str(3*365) + ' days'), end_date=today_utc)
     # basically, this waits for 3 hours after market close if it's the same day
     return open_days.iloc[-1]['market_close'].date().strftime('%Y-%m-%d')
+
+
+def check_if_today_trading_day():
+    today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
+    ndq = mcal.get_calendar('NASDAQ')
+    open_days = ndq.schedule(start_date=today_ny - pd.Timedelta(str(365) + ' days'), end_date=today_ny)
+    return open_days.index[-1].date() == today_ny.date()
 
 
 def setup_driver():
@@ -158,9 +165,17 @@ def sign_in_barchart_com(driver):
     driver.get('https://www.barchart.com/login')
     email = os.environ.get('barchart_username')
     password = os.environ.get('barchart_pass')
-    driver.find_element_by_name('email').send_keys(email)
-    driver.find_element_by_name('password').send_keys(password)
-    time.sleep(1.2 + np.random.random())
+    try:
+        driver.find_element_by_name('email').send_keys(email)
+        driver.find_element_by_name('password').send_keys(password)
+        time.sleep(1.2 + np.random.random())
+    except TypeError:
+        close = driver.find_elements_by_class_name('form-close')
+        for c in close:
+            try:
+                c.click()
+            except ElementNotInteractableException:
+                continue
     try:
         driver.find_element_by_xpath('//button[text()="Log In"]').click()
     except ElementClickInterceptedException:
@@ -353,7 +368,11 @@ def download_vioo_holdings(driver):
 
     driver.set_page_load_timeout(10)
 
-    driver.find_element_by_link_text('Export data').click()
+    # sometimes need to try again
+    try:
+        driver.find_element_by_link_text('Export data').click()
+    except NoSuchElementException:
+        driver.find_element_by_link_text('Export data').click()
 
     # TODO: refactor this into a function
     datapath = home_dir + 'data/index_funds/VIOO/'
@@ -387,17 +406,21 @@ def daily_updater(driver):
         today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
         for source in ['barchart.com', 'investing.com']:
             if not check_if_files_exist(source=source):
-                if today_ny.date() != cu.get_latest_daily_date(source).date():
+                # if files not there, latest files are not today, and today is not a trading day...
+                is_trading_day = check_if_today_trading_day()
+                up_to_date = today_ny.date() == cu.get_latest_daily_date(source).date()
+                if not up_to_date and not is_trading_day:
                     dl_source(source)
-                elif today_ny.hour >= 20:
+                elif not up_to_date and today_ny.hour >= 20:
                     dl_source(source)
 
         for index in ['IJR', 'SLY', 'VIOO']:
             if not check_if_index_files_exist(index):
                 latest_index_date = cu.get_latest_index_date(index)
-                if latest_index_date.date() != today_ny.date():
+                up_to_date = latest_index_date.date() == today_ny.date()
+                if not up_to_date and not is_trading_day:
                     dl_idx(index)
-                if today_ny.hour >= 20:
+                elif not up_to_date and today_ny.hour >= 20:
                     dl_idx(index)
 
         print('sleeping 1h...')
