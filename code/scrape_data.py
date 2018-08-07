@@ -131,6 +131,12 @@ def sign_in(driver, source='barchart.com'):
 
 
 def sign_in_investing_com(driver):
+    username = os.environ.get('investing_username')
+    password = os.environ.get('investing_password')
+    if email is None or password is None:
+        print('add email and pass to bashrc!! exiting.')
+        return
+
     try:
         driver.get('https://www.investing.com')
     except TimeoutException:
@@ -148,8 +154,6 @@ def sign_in_investing_com(driver):
     #     close_icon.click()
 
     driver.find_element_by_xpath("//*[text()='Sign In']").click()
-    username = os.environ.get('investing_username')
-    password = os.environ.get('investing_password')
     driver.find_element_by_id('loginFormUser_email').send_keys(username)
     driver.find_element_by_id('loginForm_password').send_keys(password)
     # click the "Sign In" button
@@ -165,6 +169,10 @@ def sign_in_barchart_com(driver):
     driver.get('https://www.barchart.com/login')
     email = os.environ.get('barchart_username')
     password = os.environ.get('barchart_pass')
+    if email is None or password is None:
+        print('add email and pass to bashrc!! exiting.')
+        return
+
     try:
         driver.find_element_by_name('email').send_keys(email)
         driver.find_element_by_name('password').send_keys(password)
@@ -178,14 +186,16 @@ def sign_in_barchart_com(driver):
                 continue
     try:
         driver.find_element_by_xpath('//button[text()="Log In"]').click()
+    except TimeoutException:
+        pass
     except ElementClickInterceptedException:
         # classname: reveal-modal-bg fade in
         driver.find_element_by_xpath('/html/body/div[9]/div/div/div[3]/div/div[1]/div/a').click()
         time.sleep(2)
-    try:
-        driver.find_element_by_xpath('//button[text()="Log In"]').click()
-    except TimeoutException:
-        pass
+        try:
+            driver.find_element_by_xpath('//button[text()="Log In"]').click()
+        except TimeoutException:
+            pass
 
 
 def wait_for_data_download(filename=cu.get_home_dir() + 'S&P 600 Components.csv'):
@@ -258,7 +268,10 @@ def download_sp600_data(driver, source='barchart.com'):
 
 
 def download_investing_com(driver):
-    driver.get('https://www.investing.com/indices/s-p-600-components')
+    try:
+        driver.get('https://www.investing.com/indices/s-p-600-components')
+    except TimeoutException:
+        pass
 
     data_list = ['price', 'performance', 'technical', 'fundamental']
     latest_market_date = get_last_open_trading_day()
@@ -267,14 +280,32 @@ def download_investing_com(driver):
     for d, next_d in zip(data_list, data_list[1:] + [None]):
         print('downloading {} data...'.format(d))
         dl_link = driver.find_element_by_class_name('js-download-index-component-data')
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", dl_link)
+        time.sleep(0.23)
         # need to use alt+click to download without prompt
         # set the option browser.altClickSave to true in config:
         # https://stackoverflow.com/questions/36338653/python-selenium-actionchains-altclick
         # https://superuser.com/a/1009706/435890
-        ActionChains(driver).key_down(Keys.ALT).click(dl_link).perform()
-        ActionChains(driver).key_up(Keys.ALT).perform()
+        try:
+            # ActionChains(driver).key_down(Keys.ALT).click(dl_link).perform()
+            # ActionChains(driver).key_up(Keys.ALT).perform()
+            dl_link.click()
+        except ElementClickInterceptedException:
+            ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+            time.sleep(0.13)
+            # ActionChains(driver).key_down(Keys.ALT).click(dl_link).perform()
+            # ActionChains(driver).key_up(Keys.ALT).perform()
+            dl_link.click()
+
         if next_d is not None:
-            driver.find_element_by_id('filter_{}'.format(next_d)).click()
+            try:
+                next_link = driver.find_element_by_id('filter_{}'.format(next_d))
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", next_link)
+                next_link.click()
+            except ElementClickInterceptedException:
+                ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+                time.sleep(0.24)
+                driver.find_element_by_id('filter_{}'.format(next_d)).click()
 
         time.sleep(1.57 + np.random.random())
         wait_for_data_download()
@@ -368,10 +399,11 @@ def download_vioo_holdings(driver):
 
     driver.set_page_load_timeout(10)
 
-    # sometimes need to try again
+    # sometimes need to try again after waiting a few seconds
     try:
         driver.find_element_by_link_text('Export data').click()
     except NoSuchElementException:
+        time.sleep(2.372)
         driver.find_element_by_link_text('Export data').click()
 
     # TODO: refactor this into a function
@@ -404,10 +436,10 @@ def daily_updater(driver):
     while True:
         today_utc = pd.to_datetime('now')
         today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
+        is_trading_day = check_if_today_trading_day()
         for source in ['barchart.com', 'investing.com']:
             if not check_if_files_exist(source=source):
                 # if files not there, latest files are not today, and today is not a trading day...
-                is_trading_day = check_if_today_trading_day()
                 up_to_date = today_ny.date() == cu.get_latest_daily_date(source).date()
                 if not up_to_date and not is_trading_day:
                     dl_source(source)
