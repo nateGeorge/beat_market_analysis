@@ -333,6 +333,9 @@ if __name__ == '__main__':
     current_set.difference(wrds_set)
     wrds_set.difference(current_set)
 
+    print('latest constituents:')
+    print(get_current_smallest_mkt_cap(df))
+
     # VIOO seems to be slower to remove companies that are not in the index;
     # companies that are not in the current set from barchart.com are only in vioo
 
