@@ -51,12 +51,11 @@ def make_dirs(path):
 
 
 def get_last_open_trading_day():
-    today_utc = pd.to_datetime('now')
-    # was thinking about using NY time, but mcal is in UTC
-    # local_tz = pytz.timezone('America/New_York')
-    # today_ny = today_utc.replace(tzinfo=pytz.utc).astimezone(local_tz)
+    # us NY time so the day is correct -- should also correct for times after
+    # midnight NY time and before market close that day
+    today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
     ndq = mcal.get_calendar('NASDAQ')
-    open_days = ndq.schedule(start_date=today_utc - pd.Timedelta(str(3*365) + ' days'), end_date=today_utc)
+    open_days = ndq.schedule(start_date=today_ny - pd.Timedelta(str(3*365) + ' days'), end_date=today_ny)
     # basically, this waits for 3 hours after market close if it's the same day
     return open_days.iloc[-1]['market_close'].date().strftime('%Y-%m-%d')
 
