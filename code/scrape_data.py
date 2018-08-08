@@ -344,6 +344,7 @@ def download_ijr_holdings(driver):
     """
     gets csv from iShares SP600 ETF, IJR
     """
+    print('downloading IJR data')
     home_dir = cu.get_home_dir()
     latest_market_date = get_last_open_trading_day()
 
@@ -363,6 +364,7 @@ def download_sly_holdings(driver):
     """
     gets csv from SPDY SP600 ETF, SLY
     """
+    print('downloading SLY data')
     home_dir = cu.get_home_dir()
     latest_market_date = get_last_open_trading_day()
 
@@ -385,6 +387,7 @@ def download_vioo_holdings(driver):
 
     gives weird Content-Type of csv/comma-separated-values
     """
+    print('downloading VIOO data')
     home_dir = cu.get_home_dir()
     latest_market_date = get_last_open_trading_day()
 
