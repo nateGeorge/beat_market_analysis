@@ -132,7 +132,7 @@ def sign_in(driver, source='barchart.com'):
 def sign_in_investing_com(driver):
     username = os.environ.get('investing_username')
     password = os.environ.get('investing_password')
-    if email is None or password is None:
+    if username is None or password is None:
         print('add email and pass to bashrc!! exiting.')
         return
 
