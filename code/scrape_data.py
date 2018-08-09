@@ -379,6 +379,9 @@ def download_sly_holdings(driver):
     wait_for_data_download(src_filename)
     dst_filename =  datapath + 'SLY_holdings_' + latest_market_date + '.xls'
     shutil.move(src_filename, dst_filename)
+    # sometimes source file seems to stick around...
+    if os.path.exists(src_filename):
+        os.remove(src_filename)
 
 
 def download_vioo_holdings(driver):
@@ -403,10 +406,16 @@ def download_vioo_holdings(driver):
 
     # sometimes need to try again after waiting a few seconds
     try:
-        driver.find_element_by_link_text('Export data').click()
+        try:
+            driver.find_element_by_link_text('Export data').click()
+        except TimeoutException:
+            pass
     except NoSuchElementException:
         time.sleep(2.372)
-        driver.find_element_by_link_text('Export data').click()
+        try:
+            driver.find_element_by_link_text('Export data').click()
+        except TimeoutException:
+            pass
 
     # TODO: refactor this into a function
     datapath = home_dir + 'data/index_funds/VIOO/'
