@@ -71,7 +71,10 @@ def get_historical_constituents_wrds():
     # TODO:
     # need to check that no tickers are used for multiple companies
 
-    return constituent_companies, constituent_tickers
+    # get unique dates where changes were made
+    unique_dates = set(sp600_df['from'].unique()) | set(sp600_df['thru'].unique())
+
+    return constituent_companies, constituent_tickers, unique_dates
 
 
 def get_latest_daily_date(source='barchart.com'):
@@ -312,7 +315,7 @@ def load_vioo_holdings():
 
 
 if __name__ == '__main__':
-    constituent_companies, constituent_tickers = get_historical_constituents_wrds()
+    constituent_companies, constituent_tickers, unique_dates = get_historical_constituents_wrds()
     # # get list of tickers from latest WRDS data
     # 6-26-2018 was last time it was downloaded
     wrds_tickers = constituent_tickers['2018-06-26']
@@ -335,6 +338,12 @@ if __name__ == '__main__':
 
     print('latest constituents:')
     print(get_current_smallest_mkt_cap(df))
+
+    # TODO:
+    # see how often the bottom 20 companies have changed
+    # need to get historical market caps first
+    # for d in unique_dates:
+    #     get_current_smallest_mkt_cap(df)
 
     # VIOO seems to be slower to remove companies that are not in the index;
     # companies that are not in the current set from barchart.com are only in vioo
