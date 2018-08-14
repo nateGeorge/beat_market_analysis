@@ -30,10 +30,9 @@ import constituents_utils as cu
 # http://scraping.pro/use-headless-firefox-scraping-linux/
 # main thing to do is install this first:
 # sudo apt-get install xvfb
-from pyvirtualdisplay import Display
-display = Display(visible=0, size=(1920, 1080))
-display.start()
-
+# from pyvirtualdisplay import Display
+# display = Display(visible=0, size=(1920, 1080))
+# display.start()
 
 def make_dirs(path):
     """
@@ -445,29 +444,33 @@ def daily_updater(driver):
             download_vioo_holdings(driver)
 
     while True:
-        today_utc = pd.to_datetime('now')
-        today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
-        is_trading_day = check_if_today_trading_day()
-        for source in ['barchart.com', 'investing.com']:
-            if not check_if_files_exist(source=source):
-                # if files not there, latest files are not today, and today is not a trading day...
-                up_to_date = today_ny.date() == cu.get_latest_daily_date(source).date()
-                if not up_to_date and not is_trading_day:
-                    dl_source(source)
-                elif not up_to_date and today_ny.hour >= 20:
-                    dl_source(source)
+        try:
+            today_utc = pd.to_datetime('now')
+            today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
+            is_trading_day = check_if_today_trading_day()
+            for source in ['barchart.com', 'investing.com']:
+                if not check_if_files_exist(source=source):
+                    # if files not there, latest files are not today, and today is not a trading day...
+                    up_to_date = today_ny.date() == cu.get_latest_daily_date(source).date()
+                    if not up_to_date and not is_trading_day:
+                        dl_source(source)
+                    elif not up_to_date and today_ny.hour >= 20:
+                        dl_source(source)
 
-        for index in ['IJR', 'SLY', 'VIOO']:
-            if not check_if_index_files_exist(index):
-                latest_index_date = cu.get_latest_index_date(index)
-                up_to_date = latest_index_date.date() == today_ny.date()
-                if not up_to_date and not is_trading_day:
-                    dl_idx(index)
-                elif not up_to_date and today_ny.hour >= 20:
-                    dl_idx(index)
+            for index in ['IJR', 'SLY', 'VIOO']:
+                if not check_if_index_files_exist(index):
+                    latest_index_date = cu.get_latest_index_date(index)
+                    up_to_date = latest_index_date.date() == today_ny.date()
+                    if not up_to_date and not is_trading_day:
+                        dl_idx(index)
+                    elif not up_to_date and today_ny.hour >= 20:
+                        dl_idx(index)
 
-        print('sleeping 1h...')
-        time.sleep(3600)
+            print('sleeping 1h...')
+            time.sleep(3600)
+        except:
+            driver.quit()
+            driver = setup_driver()
 
 
 if __name__ == '__main__':
