@@ -50,7 +50,7 @@ def make_dirs(path):
 
 
 def get_last_open_trading_day():
-    # us NY time so the day is correct -- should also correct for times after
+    # use NY time so the day is correct -- should also correct for times after
     # midnight NY time and before market close that day
     today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
     ndq = mcal.get_calendar('NASDAQ')
