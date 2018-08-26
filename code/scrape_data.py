@@ -30,9 +30,9 @@ import constituents_utils as cu
 # http://scraping.pro/use-headless-firefox-scraping-linux/
 # main thing to do is install this first:
 # sudo apt-get install xvfb
-# from pyvirtualdisplay import Display
-# display = Display(visible=0, size=(1920, 1080))
-# display.start()
+from pyvirtualdisplay import Display
+display = Display(visible=0, size=(1920, 1080))
+display.start()
 
 def make_dirs(path):
     """
