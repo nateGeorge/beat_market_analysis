@@ -1,3 +1,6 @@
+# TODO: if downloaded file is 0 bytes, try again
+
+
 # core
 import os
 import time
@@ -6,6 +9,7 @@ import glob
 import calendar
 import datetime
 import shutil
+import traceback
 
 # installed
 import pytz
@@ -30,9 +34,9 @@ import constituents_utils as cu
 # http://scraping.pro/use-headless-firefox-scraping-linux/
 # main thing to do is install this first:
 # sudo apt-get install xvfb
-# from pyvirtualdisplay import Display
-# display = Display(visible=0, size=(1920, 1080))
-# display.start()
+from pyvirtualdisplay import Display
+display = Display(visible=0, size=(1920, 1080))
+display.start()
 
 def make_dirs(path):
     """
@@ -468,7 +472,9 @@ def daily_updater(driver):
 
             print('sleeping 1h...')
             time.sleep(3600)
-        except:
+        except Exception as e:
+            print(e)
+            print(traceback.print_tb(e.__traceback__))
             driver.quit()
             driver = setup_driver()
 
