@@ -357,7 +357,7 @@ def download_ijr_holdings(driver):
     if not os.path.exists(datapath): (make_dirs(datapath))
     src_filename = FILEPATH + 'IJR_holdings.csv'
     wait_for_data_download(src_filename)
-    dst_filename =  FILEPATH + 'IJR_holdings_' + latest_market_date + '.csv'
+    dst_filename =  datapath + 'IJR_holdings_' + latest_market_date + '.csv'
     shutil.move(src_filename, dst_filename)
 
 
@@ -369,15 +369,17 @@ def download_sly_holdings(driver):
     latest_market_date = get_last_open_trading_day()
 
     driver.get('https://us.spdrs.com/en/etf/spdr-sp-600-small-cap-etf-SLY')
-    driver.find_element_by_xpath('/html/body/main/article/div[3]/ul/li[3]/a').click()
-    driver.find_element_by_xpath('/html/body/main/article/div[4]/div[3]/div[1]/div[1]/section/div[2]/a').click()
+    driver.find_element_by_xpath('//*[@id="detail"]/article/div[4]/ul/li[3]/a').click()
+    # driver.find_element_by_xpath('/html/body/main/article/div[3]/ul/li[3]/a').click()  # used to be how to get to 'holdings' tab, but broke
+    driver.find_element_by_xpath('//*[@id="holdings"]/div[1]/div[1]/section/div[2]/a').click()
+    # driver.find_element_by_xpath('/html/body/main/article/div[4]/div[3]/div[1]/div[1]/section/div[2]/a').click()
 
     # TODO: refactor this into a function
     datapath = FILEPATH + 'index_funds/SLY/'
     if not os.path.exists(datapath): (make_dirs(datapath))
     src_filename = FILEPATH + 'SLY_All_Holdings.xls'
     wait_for_data_download(src_filename)
-    dst_filename =  FILEPAHT + 'SLY_holdings_' + latest_market_date + '.xls'
+    dst_filename =  datapath + 'SLY_holdings_' + latest_market_date + '.xls'
     shutil.move(src_filename, dst_filename)
     # sometimes source file seems to stick around...
     if os.path.exists(src_filename):
@@ -421,7 +423,7 @@ def download_vioo_holdings(driver):
     if not os.path.exists(datapath): (make_dirs(datapath))
     src_filename = FILEPATH + 'ProductDetailsHoldings_S&P_Small-Cap_600_ETF.csv'
     wait_for_data_download(src_filename)
-    dst_filename =  FILEPATH + 'VIOO_holdings_' + latest_market_date + '.csv'
+    dst_filename =  datapath + 'VIOO_holdings_' + latest_market_date + '.csv'
     shutil.move(src_filename, dst_filename)
 
 
