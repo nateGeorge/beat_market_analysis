@@ -1,10 +1,12 @@
+# download folder for firefox should be /home/nate/Dropbox/data/sp600
+
+
 # TODO: if downloaded file is 0 bytes, try again
 
 
 # core
 import os
 import time
-import pytz
 import glob
 import calendar
 import datetime
@@ -37,6 +39,9 @@ import constituents_utils as cu
 from pyvirtualdisplay import Display
 display = Display(visible=0, size=(1920, 1080))
 display.start()
+
+FILEPATH = '/home/nate/Dropbox/data/sp600/'
+
 
 def make_dirs(path):
     """
@@ -200,7 +205,7 @@ def sign_in_barchart_com(driver):
             pass
 
 
-def wait_for_data_download(filename=cu.get_home_dir() + 'S&P 600 Components.csv'):
+def wait_for_data_download(filename=FILEPATH + 'S&P 600 Components.csv'):
     """
     waits for a file (filename) to exist; when it does, ends waiting
     """
@@ -213,7 +218,6 @@ def wait_for_data_download(filename=cu.get_home_dir() + 'S&P 600 Components.csv'
 def check_if_files_exist(source='barchart.com'):
     """
     """
-    home_dir = cu.get_home_dir()
     data_list = ['price', 'performance', 'technical', 'fundamental']
 
     latest_market_date = get_last_open_trading_day()
@@ -226,7 +230,7 @@ def check_if_files_exist(source='barchart.com'):
     if latest_date == latest_market_date:
         # check that all 4 files are there
         for d in data_list:
-            if not os.path.exists(home_dir + 'data/{}/sp600_{}_'.format(source, d) + latest_market_date + '.csv'):
+            if not os.path.exists(FILEPATH + '{}/sp600_{}_'.format(source, d) + latest_market_date + '.csv'):
                 return False
 
         print("latest data is already downloaded")
@@ -236,7 +240,6 @@ def check_if_files_exist(source='barchart.com'):
 
 
 def check_if_index_files_exist(index='IJR'):
-    home_dir = cu.get_home_dir()
     latest_market_date = get_last_open_trading_day()
     latest_index_date = cu.get_latest_index_date(index)
     if latest_index_date is None:
@@ -245,10 +248,10 @@ def check_if_index_files_exist(index='IJR'):
 
     latest_index_date = latest_index_date.strftime('%Y-%m-%d')
     if latest_index_date == latest_market_date:
-        print('latest data already downloaded for ' + index)
+        # print('latest data already downloaded for ' + index)
         return True
     else:
-        print('data not up to date for ' + index)
+        # print('data not up to date for ' + index)
         return False
 
 
@@ -260,8 +263,6 @@ def download_sp600_data(driver, source='barchart.com'):
         return
 
     print('data not up to date for {}; downloading'.format(source))
-
-    home_dir = cu.get_home_dir()
 
     if source == 'investing.com':
         download_investing_com(driver)
@@ -277,7 +278,6 @@ def download_investing_com(driver):
 
     data_list = ['price', 'performance', 'technical', 'fundamental']
     latest_market_date = get_last_open_trading_day()
-    home_dir = cu.get_home_dir()
 
     for d, next_d in zip(data_list, data_list[1:] + [None]):
         print('downloading {} data...'.format(d))
@@ -311,7 +311,7 @@ def download_investing_com(driver):
 
         time.sleep(1.57 + np.random.random())
         wait_for_data_download()
-        shutil.move(home_dir + 'S&P 600 Components.csv', home_dir + 'data/investing.com/sp600_{}_'.format(d) + latest_market_date + '.csv')
+        shutil.move(FILEPATH + 'S&P 600 Components.csv', FILEPATH + 'investing.com/sp600_{}_'.format(d) + latest_market_date + '.csv')
 
 
 def download_barchart_com(driver):
@@ -327,7 +327,6 @@ def download_barchart_com(driver):
     todays_date_eastern = datetime.datetime.now(tz).strftime('%m-%d-%Y')
     data_list = ['price', 'technical', 'performance', 'fundamental']
     link_list = ['main', 'technical', 'performance', 'fundamental']
-    home_dir = cu.get_home_dir()
     for link, d in zip(link_list, data_list):
         try:
             driver.get('https://www.barchart.com/stocks/indices/sp/sp600?viewName=' + link)
@@ -335,10 +334,10 @@ def download_barchart_com(driver):
             pass
 
         driver.find_element_by_class_name('toolbar-button.download').click()
-        filename = home_dir + 'sp-600-index-{}.csv'.format(todays_date_eastern)
+        filename = FILEPATH + 'sp-600-index-{}.csv'.format(todays_date_eastern)
         print('waiting for...' + filename)
         wait_for_data_download(filename)
-        filepath_dst = home_dir + 'data/barchart.com/sp600_{}_'.format(d) + latest_market_date + '.csv'
+        filepath_dst = FILEPATH + 'barchart.com/sp600_{}_'.format(d) + latest_market_date + '.csv'
         shutil.move(filename, filepath_dst)
         time.sleep(1.1 + np.random.random())
 
@@ -348,18 +347,17 @@ def download_ijr_holdings(driver):
     gets csv from iShares SP600 ETF, IJR
     """
     print('downloading IJR data')
-    home_dir = cu.get_home_dir()
     latest_market_date = get_last_open_trading_day()
 
     driver.get('https://www.ishares.com/us/products/239774/ishares-core-sp-smallcap-etf')
     driver.find_element_by_link_text('Detailed Holdings and Analytics').click()
 
     # move downloaded file
-    datapath = home_dir + 'data/index_funds/IJR/'
+    datapath = FILEPATH + 'index_funds/IJR/'
     if not os.path.exists(datapath): (make_dirs(datapath))
-    src_filename = home_dir + 'IJR_holdings.csv'
+    src_filename = FILEPATH + 'IJR_holdings.csv'
     wait_for_data_download(src_filename)
-    dst_filename =  datapath + 'IJR_holdings_' + latest_market_date + '.csv'
+    dst_filename =  FILEPATH + 'IJR_holdings_' + latest_market_date + '.csv'
     shutil.move(src_filename, dst_filename)
 
 
@@ -368,7 +366,6 @@ def download_sly_holdings(driver):
     gets csv from SPDY SP600 ETF, SLY
     """
     print('downloading SLY data')
-    home_dir = cu.get_home_dir()
     latest_market_date = get_last_open_trading_day()
 
     driver.get('https://us.spdrs.com/en/etf/spdr-sp-600-small-cap-etf-SLY')
@@ -376,11 +373,11 @@ def download_sly_holdings(driver):
     driver.find_element_by_xpath('/html/body/main/article/div[4]/div[3]/div[1]/div[1]/section/div[2]/a').click()
 
     # TODO: refactor this into a function
-    datapath = home_dir + 'data/index_funds/SLY/'
+    datapath = FILEPATH + 'index_funds/SLY/'
     if not os.path.exists(datapath): (make_dirs(datapath))
-    src_filename = home_dir + 'SLY_All_Holdings.xls'
+    src_filename = FILEPATH + 'SLY_All_Holdings.xls'
     wait_for_data_download(src_filename)
-    dst_filename =  datapath + 'SLY_holdings_' + latest_market_date + '.xls'
+    dst_filename =  FILEPAHT + 'SLY_holdings_' + latest_market_date + '.xls'
     shutil.move(src_filename, dst_filename)
     # sometimes source file seems to stick around...
     if os.path.exists(src_filename):
@@ -394,7 +391,6 @@ def download_vioo_holdings(driver):
     gives weird Content-Type of csv/comma-separated-values
     """
     print('downloading VIOO data')
-    home_dir = cu.get_home_dir()
     latest_market_date = get_last_open_trading_day()
 
     # started here and went to "Holding details" link
@@ -421,11 +417,11 @@ def download_vioo_holdings(driver):
             pass
 
     # TODO: refactor this into a function
-    datapath = home_dir + 'data/index_funds/VIOO/'
+    datapath = FILEPATH + 'index_funds/VIOO/'
     if not os.path.exists(datapath): (make_dirs(datapath))
-    src_filename = home_dir + 'ProductDetailsHoldings_S&P_Small-Cap_600_ETF.csv'
+    src_filename = FILEPATH + 'ProductDetailsHoldings_S&P_Small-Cap_600_ETF.csv'
     wait_for_data_download(src_filename)
-    dst_filename =  datapath + 'VIOO_holdings_' + latest_market_date + '.csv'
+    dst_filename =  FILEPATH + 'VIOO_holdings_' + latest_market_date + '.csv'
     shutil.move(src_filename, dst_filename)
 
 

@@ -9,6 +9,8 @@ import numpy as np
 import pandas_market_calendars as mcal
 import matplotlib.pyplot as plt
 
+FILEPATH = '/home/nate/Dropbox/data/sp600/'
+
 def get_home_dir(repo_name='beat_market_analysis'):
     cwd = os.getcwd()
     cwd_list = cwd.split('/')
@@ -25,7 +27,7 @@ def get_historical_constituents_wrds():
     """
     gets historical constituents from WRDS file
     """
-    df = pd.read_csv(get_home_dir() + 'data/wrds/historical_constituents_2018-06-26.csv', parse_dates=['from', 'thru'], infer_datetime_format=True)
+    df = pd.read_csv(FILEPATH + 'wrds/historical_constituents_2018-06-26.csv', parse_dates=['from', 'thru'], infer_datetime_format=True)
 
     # only use s&p600 for now
     sp600_df = df[df['conm'] == 'S&P Smallcap 600 Index']
@@ -79,7 +81,7 @@ def get_historical_constituents_wrds():
 
 def get_latest_daily_date(source='barchart.com'):
     # get latest date from daily scrapes
-    daily_files = glob.glob(get_home_dir() + 'data/{}/*.csv'.format(source))
+    daily_files = glob.glob(FILEPATH + '{}/*.csv'.format(source))
     if len(daily_files) == 0:
         return None
 
@@ -93,7 +95,7 @@ def get_latest_index_date(ticker='IJR'):
     extension = 'csv'
     if ticker == 'SLY':
         extension = 'xls'
-    daily_files = glob.glob(get_home_dir() + 'data/index_funds/{}/*.{}'.format(ticker, extension))
+    daily_files = glob.glob(FILEPATH + 'index_funds/{}/*.{}'.format(ticker, extension))
     if len(daily_files) == 0:
         return None
 
@@ -110,7 +112,7 @@ def load_sp600_files(date='latest', source='barchart.com'):
     date should be a string, either 'latest' to use the latest available date, or
     a specific date like YYYY-mm-dd
     """
-    folder = get_home_dir() + 'data/{}/'.format(source)
+    folder = FILEPATH + '{}/'.format(source)
     dfs = []
     labels = ['price', 'performance', 'technical', 'fundamental']
     if date == 'latest':
@@ -243,7 +245,7 @@ def load_ijr_holdings():
         print('no files')
         return
 
-    filename = get_home_dir() + 'data/index_funds/IJR/IJR_holdings_' + latest_date.strftime('%Y-%m-%d') + '.csv'
+    filename = FILEPATH + 'index_funds/IJR/IJR_holdings_' + latest_date.strftime('%Y-%m-%d') + '.csv'
     df = pd.read_csv(filename, skiprows=10)
     df = df[df['Asset Class'] == 'Equity']
     for c in ['Shares', 'Market Value', 'Notional Value']:
@@ -262,7 +264,7 @@ def load_sly_holdings():
         print('no files')
         return
 
-    filename = get_home_dir() + 'data/index_funds/SLY/SLY_holdings_' + latest_date.strftime('%Y-%m-%d') + '.xls'
+    filename = FILEPATH + 'index_funds/SLY/SLY_holdings_' + latest_date.strftime('%Y-%m-%d') + '.xls'
     df = pd.read_excel(filename, skiprows=3, skipfooter=11)
 
     # remove non-equities
@@ -279,7 +281,7 @@ def load_vioo_holdings():
         print('no files')
         return
 
-    filename = get_home_dir() + 'data/index_funds/VIOO/VIOO_holdings_' + latest_date.strftime('%Y-%m-%d') + '.csv'
+    filename = FILEPATH + 'index_funds/VIOO/VIOO_holdings_' + latest_date.strftime('%Y-%m-%d') + '.csv'
     df = pd.read_csv(filename, skiprows=4)
     df.drop(['Unnamed: 0', 'Unnamed: 10'], axis=1, inplace=True)
     missing_row_idx = np.where(df.isna().sum(axis=1) == df.shape[1])[0][0]
