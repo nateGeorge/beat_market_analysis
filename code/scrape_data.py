@@ -427,16 +427,19 @@ def download_vioo_holdings(driver):
     shutil.move(src_filename, dst_filename)
 
 
-def daily_updater(driver):
+def daily_updater():
     """
     checks if any new files to download, if so, downloads them
     """
     def dl_source(source):
+        driver = setup_driver()
         print('downloading update for ' + source)
         sign_in(driver, source=source)
         download_sp600_data(driver, source=source)
+        driver.quit()
 
     def dl_idx(index):
+        driver = setup_driver()
         print('downloading update for ' + index)
         if index == 'IJR':
             download_ijr_holdings(driver)
@@ -444,6 +447,7 @@ def daily_updater(driver):
             download_sly_holdings(driver)
         elif index == 'VIOO':
             download_vioo_holdings(driver)
+        driver.quit()
 
     while True:
         try:
@@ -473,13 +477,10 @@ def daily_updater(driver):
         except Exception as e:
             print(e)
             print(traceback.print_tb(e.__traceback__))
-            driver.quit()
-            driver = setup_driver()
-
+            
 
 if __name__ == '__main__':
-    driver = setup_driver()
-    daily_updater(driver)
+    daily_updater()
 
 
     # for source in ['barchart.com', 'investing.com']:
