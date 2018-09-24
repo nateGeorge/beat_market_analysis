@@ -172,9 +172,16 @@ def load_sp600_files(date='latest', source='barchart.com'):
 
     # clean up % columns
     if source == 'barchart.com':
-        cols = ['%Chg', 'Wtd Alpha', 'YTD %Chg', '1M %Chg', '3M %Chg', '52W %Chg', '20D Rel Str', '20D His Vol', 'Div Yield(a)']
+        if 'Div Yield(a)' in df.columns:
+            cols = ['%Chg', 'Wtd Alpha', 'YTD %Chg', '1M %Chg', '3M %Chg', '52W %Chg', '20D Rel Str', '20D His Vol', 'Div Yield(a)']
+        elif 'Div Yield(ttm)' in df.columns:
+            cols = ['%Chg', 'Wtd Alpha', 'YTD %Chg', '1M %Chg', '3M %Chg', '52W %Chg', '20D Rel Str', '20D His Vol', 'Div Yield(ttm)']
+        else:
+            yield_col = [c for c in df.columns if 'Div Yield' in c]
+            cols = ['%Chg', 'Wtd Alpha', 'YTD %Chg', '1M %Chg', '3M %Chg', '52W %Chg', '20D Rel Str', '20D His Vol'] + yield_col
     elif source == 'investing.com':
         cols = ['Chg. %', 'perf Daily', 'perf 1 Week', 'perf 1 Month', 'perf YTD', 'perf 1 Year', 'perf 3 Years']
+
     for c in cols:
         df[c] = df[c].apply(lambda x: clean_pcts(x))
 
