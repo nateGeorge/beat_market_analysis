@@ -1,6 +1,5 @@
 # download folder for firefox should be /home/nate/Dropbox/data/sp600
 
-
 # TODO: if downloaded file is 0 bytes, try again
 
 
@@ -209,10 +208,14 @@ def wait_for_data_download(filename=FILEPATH + 'S&P 600 Components.csv'):
     """
     waits for a file (filename) to exist; when it does, ends waiting
     """
+    waited = 0
     while not os.path.exists(filename):
         time.sleep(0.3)
+        waited += 1
+        if waited = 1000:
+            return False
 
-    return
+    return True
 
 
 def check_if_files_exist(source='barchart.com'):
@@ -310,8 +313,12 @@ def download_investing_com(driver):
                 driver.find_element_by_id('filter_{}'.format(next_d)).click()
 
         time.sleep(1.57 + np.random.random())
-        wait_for_data_download()
-        shutil.move(FILEPATH + 'S&P 600 Components.csv', FILEPATH + 'investing.com/sp600_{}_'.format(d) + latest_market_date + '.csv')
+        # TODO: if failed, quit driver and start again
+        got_it = wait_for_data_download()
+        if got_it:
+            shutil.move(FILEPATH + 'S&P 600 Components.csv', FILEPATH + 'investing.com/sp600_{}_'.format(d) + latest_market_date + '.csv')
+        else:
+            print('download failed')
 
 
 def download_barchart_com(driver):
@@ -336,9 +343,13 @@ def download_barchart_com(driver):
         driver.find_element_by_class_name('toolbar-button.download').click()
         filename = FILEPATH + 'sp-600-index-{}.csv'.format(todays_date_eastern)
         print('waiting for...' + filename)
-        wait_for_data_download(filename)
-        filepath_dst = FILEPATH + 'barchart.com/sp600_{}_'.format(d) + latest_market_date + '.csv'
-        shutil.move(filename, filepath_dst)
+        # TODO: if failed, quit driver, delete files, start over
+        got_it = wait_for_data_download(filename)
+        if got_it:
+            filepath_dst = FILEPATH + 'barchart.com/sp600_{}_'.format(d) + latest_market_date + '.csv'
+            shutil.move(filename, filepath_dst)
+        else:
+            print('download failed')
         time.sleep(1.1 + np.random.random())
 
 
@@ -356,9 +367,12 @@ def download_ijr_holdings(driver):
     datapath = FILEPATH + 'index_funds/IJR/'
     if not os.path.exists(datapath): (make_dirs(datapath))
     src_filename = FILEPATH + 'IJR_holdings.csv'
-    wait_for_data_download(src_filename)
-    dst_filename =  datapath + 'IJR_holdings_' + latest_market_date + '.csv'
-    shutil.move(src_filename, dst_filename)
+    got_it = wait_for_data_download(src_filename)
+    if got_it:
+        dst_filename =  datapath + 'IJR_holdings_' + latest_market_date + '.csv'
+        shutil.move(src_filename, dst_filename)
+    else:
+        print('download failed')
 
 
 def download_sly_holdings(driver):
@@ -378,12 +392,15 @@ def download_sly_holdings(driver):
     datapath = FILEPATH + 'index_funds/SLY/'
     if not os.path.exists(datapath): (make_dirs(datapath))
     src_filename = FILEPATH + 'SLY_All_Holdings.xls'
-    wait_for_data_download(src_filename)
-    dst_filename =  datapath + 'SLY_holdings_' + latest_market_date + '.xls'
-    shutil.move(src_filename, dst_filename)
-    # sometimes source file seems to stick around...
-    if os.path.exists(src_filename):
-        os.remove(src_filename)
+    got_it = wait_for_data_download(src_filename)
+    if got_it:
+        dst_filename =  datapath + 'SLY_holdings_' + latest_market_date + '.xls'
+        shutil.move(src_filename, dst_filename)
+        # sometimes source file seems to stick around...
+        if os.path.exists(src_filename):
+            os.remove(src_filename)
+    else:
+        print('download failed')
 
 
 def download_vioo_holdings(driver):
@@ -403,7 +420,6 @@ def download_vioo_holdings(driver):
     except TimeoutException:
         pass
 
-    driver.set_page_load_timeout(10)
 
     # sometimes need to try again after waiting a few seconds
     try:
@@ -418,13 +434,19 @@ def download_vioo_holdings(driver):
         except TimeoutException:
             pass
 
+    # reset timeout to 10s
+    driver.set_page_load_timeout(10)
+
     # TODO: refactor this into a function
     datapath = FILEPATH + 'index_funds/VIOO/'
     if not os.path.exists(datapath): (make_dirs(datapath))
     src_filename = FILEPATH + 'ProductDetailsHoldings_S&P_Small-Cap_600_ETF.csv'
-    wait_for_data_download(src_filename)
-    dst_filename =  datapath + 'VIOO_holdings_' + latest_market_date + '.csv'
-    shutil.move(src_filename, dst_filename)
+    got_it = wait_for_data_download(src_filename)
+    if got_it:
+        dst_filename =  datapath + 'VIOO_holdings_' + latest_market_date + '.csv'
+        shutil.move(src_filename, dst_filename)
+    else:
+        print('download failed')
 
 
 def daily_updater():
@@ -477,7 +499,7 @@ def daily_updater():
         except Exception as e:
             print(e)
             print(traceback.print_tb(e.__traceback__))
-            
+
 
 if __name__ == '__main__':
     daily_updater()
