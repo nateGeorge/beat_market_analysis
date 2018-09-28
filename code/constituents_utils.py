@@ -10,6 +10,7 @@ import pandas_market_calendars as mcal
 import matplotlib.pyplot as plt
 
 FILEPATH = '/home/nate/Dropbox/data/sp600/'
+WRDS_FILEPATH = '/home/nate/Dropbox/data/wrds/compustat_north_america/tsv/'
 
 def get_home_dir(repo_name='beat_market_analysis'):
     cwd = os.getcwd()
@@ -27,14 +28,19 @@ def get_historical_constituents_wrds():
     """
     gets historical constituents from WRDS file
     """
-    df = pd.read_csv(FILEPATH + 'wrds/historical_constituents_2018-06-26.csv', parse_dates=['from', 'thru'], infer_datetime_format=True)
+    # TODO: get latest file
+    df = pd.read_csv(WRDS_FILEPATH + 'index_constituents_9-12-2018.txt', parse_dates=['from', 'thru'], infer_datetime_format=True, sep='\t')
+    if df['from'][0].tzinfo is None:
+        df['from'] = df['from'].dt.tz_localize('US/Eastern')
+    if df['thru'][0].tzinfo is None:
+        df['thru'] = df['thru'].dt.tz_localize('US/Eastern')
 
     # only use s&p600 for now
     sp600_df = df[df['conm'] == 'S&P Smallcap 600 Index']
     # create dataframe with list of constituents for each day
     start = sp600_df['from'].min()
     # get todays date and reset hour, min, sec to 0s
-    end = pd.Timestamp.today(tz='US/Eastern').replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    end = pd.Timestamp.today(tz='US/Eastern').replace(hour=0, minute=0, second=0, microsecond=0)
 
     # replace NaT with tomorrow's date
     # gives copy warning but can't get rid of it...
@@ -45,7 +51,7 @@ def get_historical_constituents_wrds():
     # gets all dates
     # date_range = mcal.date_range(start=start, end=end)
     # gets only dates valid for NYSE
-    date_range = nyse.valid_days(start_date=start, end_date=end)
+    date_range = nyse.valid_days(start_date=start.date(), end_date=end.date())
 
     constituent_companies = OrderedDict()
     constituent_tickers = OrderedDict()
