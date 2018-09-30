@@ -212,7 +212,7 @@ def wait_for_data_download(filename=FILEPATH + 'S&P 600 Components.csv'):
     while not os.path.exists(filename):
         time.sleep(0.3)
         waited += 1
-        if waited = 1000:
+        if waited == 1000:
             return False
 
     time.sleep(3)  # wait a bit longer to make sure it's fully downloaded;
