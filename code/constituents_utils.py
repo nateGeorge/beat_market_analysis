@@ -134,6 +134,11 @@ def load_sp600_files(date='latest', source='barchart.com'):
         filename = 'sp600_{}_{}.csv'.format(l, file_date)
         print(filename)
         if source == 'barchart.com':
+            # catch errors with 0 bytes filesize
+            if os.path.getsize(folder + filename) == 0:
+                print('filesize is 0 for', filename, 'returning None')
+                return None
+            
             dfs.append(pd.read_csv(folder + filename, skipfooter=1))
         elif source == 'investing.com':
             dfs.append(pd.read_csv(folder + filename))
