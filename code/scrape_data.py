@@ -215,6 +215,9 @@ def wait_for_data_download(filename=FILEPATH + 'S&P 600 Components.csv'):
         if waited = 1000:
             return False
 
+    time.sleep(3)  # wait a bit longer to make sure it's fully downloaded;
+    # had issues with barchart not fully downloading
+
     return True
 
 
@@ -291,16 +294,35 @@ def download_investing_com(driver):
         # set the option browser.altClickSave to true in config:
         # https://stackoverflow.com/questions/36338653/python-selenium-actionchains-altclick
         # https://superuser.com/a/1009706/435890
-        try:
-            # ActionChains(driver).key_down(Keys.ALT).click(dl_link).perform()
-            # ActionChains(driver).key_up(Keys.ALT).perform()
-            dl_link.click()
-        except ElementClickInterceptedException:
-            ActionChains(driver).send_keys(Keys.ESCAPE).perform()
-            time.sleep(0.13)
-            # ActionChains(driver).key_down(Keys.ALT).click(dl_link).perform()
-            # ActionChains(driver).key_up(Keys.ALT).perform()
-            dl_link.click()
+        while True:
+            try:
+                # ActionChains(driver).key_down(Keys.ALT).click(dl_link).perform()
+                # ActionChains(driver).key_up(Keys.ALT).perform()
+                dl_link.click()
+            except ElementClickInterceptedException:
+                ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+                time.sleep(0.13)
+                # ActionChains(driver).key_down(Keys.ALT).click(dl_link).perform()
+                # ActionChains(driver).key_up(Keys.ALT).perform()
+                dl_link.click()
+
+
+            got_it = wait_for_data_download()
+            # check size, if 0 bytes, delete and try again
+            size = os.path.getsize(filename)
+            if size == 0:
+                print('filesize is 0, trying again')
+                os.path.remove(filename)
+                continue
+
+            if got_it:
+                shutil.move(FILEPATH + 'S&P 600 Components.csv', FILEPATH + 'investing.com/sp600_{}_'.format(d) + latest_market_date + '.csv')
+                break
+            else:
+                print('download failed')
+
+            time.sleep(1.1)
+
 
         if next_d is not None:
             try:
@@ -313,12 +335,6 @@ def download_investing_com(driver):
                 driver.find_element_by_id('filter_{}'.format(next_d)).click()
 
         time.sleep(1.57 + np.random.random())
-        # TODO: if failed, quit driver and start again
-        got_it = wait_for_data_download()
-        if got_it:
-            shutil.move(FILEPATH + 'S&P 600 Components.csv', FILEPATH + 'investing.com/sp600_{}_'.format(d) + latest_market_date + '.csv')
-        else:
-            print('download failed')
 
 
 def download_barchart_com(driver):
@@ -340,16 +356,28 @@ def download_barchart_com(driver):
         except TimeoutException:
             pass
 
-        driver.find_element_by_class_name('toolbar-button.download').click()
-        filename = FILEPATH + 'sp-600-index-{}.csv'.format(todays_date_eastern)
-        print('waiting for...' + filename)
-        # TODO: if failed, quit driver, delete files, start over
-        got_it = wait_for_data_download(filename)
-        if got_it:
-            filepath_dst = FILEPATH + 'barchart.com/sp600_{}_'.format(d) + latest_market_date + '.csv'
-            shutil.move(filename, filepath_dst)
-        else:
-            print('download failed')
+        while True:
+            driver.find_element_by_class_name('toolbar-button.download').click()
+            filename = FILEPATH + 'sp-600-index-{}.csv'.format(todays_date_eastern)
+            print('waiting for...' + filename)
+            # TODO: if failed, quit driver, delete files, start over
+            got_it = wait_for_data_download(filename)
+            if got_it:
+                # check size, if 0 bytes, delete and try again
+                size = os.path.getsize(filename)
+                if size == 0:
+                    print('filesize is 0, trying again')
+                    os.path.remove(filename)
+                    continue
+
+                filepath_dst = FILEPATH + 'barchart.com/sp600_{}_'.format(d) + latest_market_date + '.csv'
+                shutil.move(filename, filepath_dst)
+                break
+            else:
+                print('download failed')
+            time.sleep(1.1 + np.random.random())
+
+
         time.sleep(1.1 + np.random.random())
 
 

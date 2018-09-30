@@ -118,6 +118,7 @@ def load_sp600_files(date='latest', source='barchart.com'):
     date should be a string, either 'latest' to use the latest available date, or
     a specific date like YYYY-mm-dd
     """
+    # TODO: deal with 0 bytes files
     folder = FILEPATH + '{}/'.format(source)
     dfs = []
     labels = ['price', 'performance', 'technical', 'fundamental']
