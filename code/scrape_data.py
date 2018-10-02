@@ -308,6 +308,7 @@ def download_investing_com(driver):
 
 
             got_it = wait_for_data_download()
+            filename = FILEPATH + 'S&P 600 Components.csv'
             # check size, if 0 bytes, delete and try again
             size = os.path.getsize(filename)
             if size == 0:
@@ -316,7 +317,7 @@ def download_investing_com(driver):
                 continue
 
             if got_it:
-                shutil.move(FILEPATH + 'S&P 600 Components.csv', FILEPATH + 'investing.com/sp600_{}_'.format(d) + latest_market_date + '.csv')
+                shutil.move(filename, FILEPATH + 'investing.com/sp600_{}_'.format(d) + latest_market_date + '.csv')
                 break
             else:
                 print('download failed')
