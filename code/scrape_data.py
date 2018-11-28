@@ -35,11 +35,12 @@ import constituents_utils as cu
 # http://scraping.pro/use-headless-firefox-scraping-linux/
 # main thing to do is install this first:
 # sudo apt-get install xvfb
-from pyvirtualdisplay import Display
-display = Display(visible=0, size=(1920, 1080))
-display.start()
+# from pyvirtualdisplay import Display
+# display = Display(visible=0, size=(1920, 1080))
+# display.start()
 
 FILEPATH = '/home/nate/Dropbox/data/sp600/'
+CONSTITUENT_FILEPATH = '/home/nate/Dropbox/data/barchart.com/'
 
 
 def make_dirs(path):
@@ -339,6 +340,9 @@ def download_investing_com(driver):
 
 
 def download_barchart_com(driver):
+    """
+    downloads sp600 constituents from barchart.com
+    """
     # TODO: name file as last open trading day if downloaded a day later
     # e.g. downloaded during the weekend
     # not using todays_date anymore, leaving in for referenc
@@ -478,6 +482,41 @@ def download_vioo_holdings(driver):
         print('download failed')
 
 
+def download_qqq_constituents(driver):
+    qqq_constituents_url = 'https://www.barchart.com/etfs-funds/quotes/QQQ/constituents?page=all&orderBy=percent&orderDir=desc'
+    driver.get(qqq_constituents_url)
+
+    # downloads
+    latest_market_date = get_last_open_trading_day()
+    # date to match barchart downloaded filename
+    todays_date_bc = datetime.datetime.today().strftime('%m-%d-%Y')
+    # need todays date EST for download filename
+    tz = pytz.timezone('US/Eastern')
+    todays_date_eastern = datetime.datetime.now(tz).strftime('%m-%d-%Y')
+
+    while True:
+        driver.find_element_by_class_name('toolbar-button.download').click()
+        # TODO: update path -- I think it should be the dropbox folder (FILEPATH)
+        filename = '/home/nate/github/beat_market_analysis/etf-constituents-{}.csv'.format(todays_date_eastern)
+        print('waiting for...' + filename)
+        # TODO: if failed, quit driver, delete files, start over
+        got_it = wait_for_data_download(filename)
+        if got_it:
+            # check size, if 0 bytes, delete and try again
+            size = os.path.getsize(filename)
+            if size == 0:
+                print('filesize is 0, trying again')
+                os.path.remove(filename)
+                continue
+
+            filepath_dst = CONSTITUENT_FILEPATH + 'QQQ/qqq_constituents_' + latest_market_date + '.csv'
+            shutil.move(filename, filepath_dst)
+            break
+        else:
+            print('download failed')
+        time.sleep(1.1 + np.random.random())
+
+
 def daily_updater():
     """
     checks if any new files to download, if so, downloads them
@@ -487,6 +526,8 @@ def daily_updater():
         print('downloading update for ' + source)
         sign_in(driver, source=source)
         download_sp600_data(driver, source=source)
+        if source == 'barchart.com':
+            download_qqq_constituents(driver)
         driver.quit()
 
     def dl_idx(index):
@@ -531,7 +572,8 @@ def daily_updater():
 
 
 if __name__ == '__main__':
-    daily_updater()
+    pass
+    #daily_updater()
 
 
     # for source in ['barchart.com', 'investing.com']:
