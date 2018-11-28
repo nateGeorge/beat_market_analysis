@@ -10,6 +10,7 @@ import pandas_market_calendars as mcal
 import matplotlib.pyplot as plt
 
 FILEPATH = '/home/nate/Dropbox/data/sp600/'
+CONSTITUENT_FILEPATH = '/home/nate/Dropbox/data/barchart.com/'
 WRDS_FILEPATH = '/home/nate/Dropbox/data/wrds/compustat_north_america/tsv/'
 
 def get_home_dir(repo_name='beat_market_analysis'):
@@ -96,6 +97,17 @@ def get_latest_daily_date(source='barchart.com'):
     return last_daily
 
 
+def get_latest_daily_date_constituents(index='QQQ'):
+    # get latest date from daily scrapes
+    daily_files = glob.glob(CONSTITUENT_FILEPATH + '{}/*.csv'.format(index))
+    if len(daily_files) == 0:
+        return None
+
+    daily_dates = [pd.to_datetime(f.split('/')[-1].split('_')[-1].split('.')[0]) for f in daily_files]
+    last_daily = max(daily_dates)
+    return last_daily
+
+
 def get_latest_index_date(ticker='IJR'):
     # get latest date from daily scrapes
     extension = 'csv'
@@ -138,7 +150,7 @@ def load_sp600_files(date='latest', source='barchart.com'):
             if os.path.getsize(folder + filename) == 0:
                 print('filesize is 0 for', filename, 'returning None')
                 return None
-            
+
             dfs.append(pd.read_csv(folder + filename, skipfooter=1))
         elif source == 'investing.com':
             dfs.append(pd.read_csv(folder + filename))
@@ -333,6 +345,26 @@ def load_vioo_holdings():
 #     for ticker in current_tickers[d]:
 #         mcaps.append(all_stocks_dfs[ticker][''])
 #     market_caps[d] =
+
+
+def load_barchart_constituents(date='latest', index='QQQ'):
+    if date == 'latest':
+        file_date = get_latest_daily_date_constituents(index=index).strftime('%Y-%m-%d')
+        if file_date is None:
+            print('no files to load!')
+            return None
+    else:
+        file_date = date
+
+    filename = CONSTITUENT_FILEPATH + 'QQQ/qqq_constituents_' + file_date + '.csv'
+    df = pd.read_csv(filename)
+    # last column says 'downloaded from...'
+    df.drop(df.index[-1], inplace=True)
+    df.set_index('Symbol', inplace=True)
+    df['% Holding'] = df['% Holding'].apply(lambda x: x.replace('%', ''))
+    df['% Holding'] = df['% Holding'].astype('float')
+
+    return df
 
 
 if __name__ == '__main__':
