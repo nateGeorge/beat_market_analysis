@@ -498,7 +498,7 @@ def download_qqq_constituents(driver):
     while True:
         driver.find_element_by_class_name('toolbar-button.download').click()
         # TODO: update path -- I think it should be the dropbox folder (FILEPATH)
-        filename = '/home/nate/github/beat_market_analysis/etf-constituents-{}.csv'.format(todays_date_eastern)
+        filename = FILEPATH + 'etf-constituents-{}.csv'.format(todays_date_eastern)
         print('waiting for...' + filename)
         # TODO: if failed, quit driver, delete files, start over
         got_it = wait_for_data_download(filename)
