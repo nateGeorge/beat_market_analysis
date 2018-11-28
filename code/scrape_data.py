@@ -87,6 +87,7 @@ def setup_driver():
     # also change downloads folder to ticker_data within git repo
     # then file path to profile, and use here:
     # investing.com was the name of the profile]
+    # download folder should be set to: ⁦/home/nate/Dropbox/data/sp600⁩
     prof_paths = ['/home/nate/.mozilla/firefox/exzvq4ez.investing.com',
                 # work computer path
                 '/home/nate/.mozilla/firefox/i12g875t.investing.com']
