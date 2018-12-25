@@ -175,8 +175,11 @@ def sign_in_investing_com(driver):
 
 def sign_in_barchart_com(driver):
     driver.get('https://www.barchart.com/login')
-    email = os.environ.get('barchart_username')
-    password = os.environ.get('barchart_pass')
+    # email = os.environ.get('barchart_username')
+    # password = os.environ.get('barchart_pass')
+    email = os.environ.get('barchart_username2')
+    password = os.environ.get('barchart_pass2')
+
     if email is None or password is None:
         print('add email and pass to bashrc!! exiting.')
         return
@@ -354,6 +357,7 @@ def download_barchart_com(driver):
     # need todays date EST for download filename
     tz = pytz.timezone('US/Eastern')
     todays_date_eastern = datetime.datetime.now(tz).strftime('%m-%d-%Y')
+    todays_date_local = pd.Timestamp('now').strftime('%m-%d-%Y')
     data_list = ['price', 'technical', 'performance', 'fundamental']
     link_list = ['main', 'technical', 'performance', 'fundamental']
     for link, d in zip(link_list, data_list):
@@ -364,7 +368,8 @@ def download_barchart_com(driver):
 
         while True:
             driver.find_element_by_class_name('toolbar-button.download').click()
-            filename = FILEPATH + 'sp-600-index-{}.csv'.format(todays_date_eastern)
+            # TODO: rename to last active trading day (also for investing and others)
+            filename = FILEPATH + 'sp-600-index-{}.csv'.format(todays_date_local)
             print('waiting for...' + filename)
             # TODO: if failed, quit driver, delete files, start over
             got_it = wait_for_data_download(filename)

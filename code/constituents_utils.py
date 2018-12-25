@@ -368,41 +368,54 @@ def load_barchart_constituents(date='latest', index='QQQ'):
 
 
 if __name__ == '__main__':
-    constituent_companies, constituent_tickers, unique_dates = get_historical_constituents_wrds()
-    # # get list of tickers from latest WRDS data
-    # 6-26-2018 was last time it was downloaded
-    wrds_tickers = constituent_tickers['2018-06-26']
-    wrds_set = set(wrds_tickers)
-    ijr = load_ijr_holdings()
-    sly = load_sly_holdings()
-    vioo = load_vioo_holdings()
-    ijr_set = set(ijr.index)
-    sly_set = set(sly.index)
-    vioo_set = set(vioo.index)
-    # all currently have at least 3 differences -- ijr seems to differ the most
-    ijr_set.difference(wrds_set)
-    sly_set.difference(wrds_set)
-    vioo_set.difference(wrds_set)
+    pass
 
-    df = load_sp600_files()
-    current_set = set(df.index)
-    current_set.difference(wrds_set)
-    wrds_set.difference(current_set)
+    def qqq_analysis():
+        """
+        looking at the correlation in daily movements between the stocks and the qqq index
+        """
+        df = load_barchart_constituents()
+        
 
-    print('latest constituents:')
-    print(get_current_smallest_mkt_cap(df))
+    def check_wrds_differences():
+        """
+        checks which tickers are missing from various ETFs and the barchart sp600 list
+        """
+        constituent_companies, constituent_tickers, unique_dates = get_historical_constituents_wrds()
+        # # get list of tickers from latest WRDS data
+        # 6-26-2018 was last time it was downloaded
+        wrds_tickers = constituent_tickers['2018-06-26']
+        wrds_set = set(wrds_tickers)
+        ijr = load_ijr_holdings()
+        sly = load_sly_holdings()
+        vioo = load_vioo_holdings()
+        ijr_set = set(ijr.index)
+        sly_set = set(sly.index)
+        vioo_set = set(vioo.index)
+        # all currently have at least 3 differences -- ijr seems to differ the most
+        ijr_set.difference(wrds_set)
+        sly_set.difference(wrds_set)
+        vioo_set.difference(wrds_set)
 
-    # TODO:
-    # see how often the bottom 20 companies have changed
-    # need to get historical market caps first
-    # for d in unique_dates:
-    #     get_current_smallest_mkt_cap(df)
+        df = load_sp600_files()
+        current_set = set(df.index)
+        current_set.difference(wrds_set)
+        wrds_set.difference(current_set)
 
-    # VIOO seems to be slower to remove companies that are not in the index;
-    # companies that are not in the current set from barchart.com are only in vioo
+        print('latest constituents:')
+        print(get_current_smallest_mkt_cap(df))
 
-    # overall, barchart seems to be a pretty good source
+        # TODO:
+        # see how often the bottom 20 companies have changed
+        # need to get historical market caps first
+        # for d in unique_dates:
+        #     get_current_smallest_mkt_cap(df)
 
-    # sorted_df = df.sort_values(by='Market Cap')
-    # smallest = get_current_smallest_mkt_cap(df)
-    # print(smallest)
+        # VIOO seems to be slower to remove companies that are not in the index;
+        # companies that are not in the current set from barchart.com are only in vioo
+
+        # overall, barchart seems to be a pretty good source
+
+        # sorted_df = df.sort_values(by='Market Cap')
+        # smallest = get_current_smallest_mkt_cap(df)
+        # print(smallest)
