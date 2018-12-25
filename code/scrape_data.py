@@ -586,8 +586,7 @@ def daily_updater():
 
 
 if __name__ == '__main__':
-    # daily_updater()
-    pass
+    daily_updater()
 
     # for source in ['barchart.com', 'investing.com']:
     #     if not check_if_files_exist(source=source):
