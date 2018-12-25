@@ -399,7 +399,11 @@ def download_ijr_holdings(driver):
     print('downloading IJR data')
     latest_market_date = get_last_open_trading_day()
 
-    driver.get('https://www.ishares.com/us/products/239774/ishares-core-sp-smallcap-etf')
+    try:
+        driver.get('https://www.ishares.com/us/products/239774/ishares-core-sp-smallcap-etf')
+    except TimeoutException:
+        pass
+
     driver.find_element_by_link_text('Detailed Holdings and Analytics').click()
 
     # move downloaded file
@@ -490,7 +494,10 @@ def download_vioo_holdings(driver):
 
 def download_qqq_constituents(driver):
     qqq_constituents_url = 'https://www.barchart.com/etfs-funds/quotes/QQQ/constituents?page=all&orderBy=percent&orderDir=desc'
-    driver.get(qqq_constituents_url)
+    try:
+        driver.get(qqq_constituents_url)
+    except TimeoutException:
+        pass
 
     # downloads
     latest_market_date = get_last_open_trading_day()
@@ -499,11 +506,12 @@ def download_qqq_constituents(driver):
     # need todays date EST for download filename
     tz = pytz.timezone('US/Eastern')
     todays_date_eastern = datetime.datetime.now(tz).strftime('%m-%d-%Y')
+    todays_date_local = pd.Timestamp('now').strftime('%m-%d-%Y')
 
     while True:
         driver.find_element_by_class_name('toolbar-button.download').click()
         # TODO: update path -- I think it should be the dropbox folder (FILEPATH)
-        filename = FILEPATH + 'etf-constituents-{}.csv'.format(todays_date_eastern)
+        filename = FILEPATH + 'etf-constituents-{}.csv'.format(todays_date_local)
         print('waiting for...' + filename)
         # TODO: if failed, quit driver, delete files, start over
         got_it = wait_for_data_download(filename)
@@ -578,8 +586,8 @@ def daily_updater():
 
 
 if __name__ == '__main__':
-    daily_updater()
-
+    # daily_updater()
+    pass
 
     # for source in ['barchart.com', 'investing.com']:
     #     if not check_if_files_exist(source=source):
