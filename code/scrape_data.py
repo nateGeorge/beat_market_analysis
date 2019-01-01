@@ -465,17 +465,14 @@ def download_vioo_holdings(driver):
 
 
     # sometimes need to try again after waiting a few seconds
-    try:
+    delay = 0
+    while True:
         try:
+            time.sleep(delay)
             driver.find_element_by_link_text('Export data').click()
+            break
         except TimeoutException:
-            pass
-    except NoSuchElementException:
-        time.sleep(2.372)
-        try:
-            driver.find_element_by_link_text('Export data').click()
-        except TimeoutException:
-            pass
+            delay += 1
 
     # reset timeout to 10s
     driver.set_page_load_timeout(10)
