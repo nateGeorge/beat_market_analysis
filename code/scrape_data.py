@@ -35,9 +35,9 @@ import constituents_utils as cu
 # http://scraping.pro/use-headless-firefox-scraping-linux/
 # main thing to do is install this first:
 # sudo apt-get install xvfb
-from pyvirtualdisplay import Display
-display = Display(visible=0, size=(1920, 1080))
-display.start()
+# from pyvirtualdisplay import Display
+# display = Display(visible=0, size=(1920, 1080))
+# display.start()
 
 FILEPATH = '/home/nate/Dropbox/data/sp600/'
 CONSTITUENT_FILEPATH = '/home/nate/Dropbox/data/barchart.com/'
@@ -458,16 +458,20 @@ def download_vioo_holdings(driver):
     # started here and went to "Holding details" link
     #driver.get('https://institutional.vanguard.com/VGApp/iip/site/institutional/investments/productoverview?fundId=3345')
     driver.set_page_load_timeout(180)  # takes long to load
-    try:
-        driver.get('https://institutional.vanguard.com/VGApp/iip/site/institutional/investments/portfoliodetails?fundId=3345&compositionTabBox=1#hold')
-    except TimeoutException:
-        pass
+    while True:
+        try:
+            driver.get('https://institutional.vanguard.com/VGApp/iip/site/institutional/investments/portfoliodetails?fundId=3345&compositionTabBox=1#hold')
+            break
+        except TimeoutException:
+            pass
 
 
     # sometimes need to try again after waiting a few seconds
     while True:
         try:
-            driver.find_element_by_link_text('Export data').click()
+            # driver.find_element_by_link_text('EXPORT DATA').click()
+            # driver.find_element_by_xpath("//button[contains(text(),'EXPORT DATA')]").click()
+            driver.find_element_by_xpath('/html/body/div[1]/main/div/div/div/portfolio/div/div[2]/holding-details/div/div/div/div[1]/div/data-ng-include/div[1]/div/div[2]/div/button').click()
             break
         except TimeoutException:
             pass
