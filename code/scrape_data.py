@@ -457,7 +457,7 @@ def download_vioo_holdings(driver):
 
     # started here and went to "Holding details" link
     #driver.get('https://institutional.vanguard.com/VGApp/iip/site/institutional/investments/productoverview?fundId=3345')
-    driver.set_page_load_timeout(20)  # takes long to load
+    driver.set_page_load_timeout(180)  # takes long to load
     try:
         driver.get('https://institutional.vanguard.com/VGApp/iip/site/institutional/investments/portfoliodetails?fundId=3345&compositionTabBox=1#hold')
     except TimeoutException:
@@ -465,14 +465,12 @@ def download_vioo_holdings(driver):
 
 
     # sometimes need to try again after waiting a few seconds
-    delay = 0
     while True:
         try:
-            time.sleep(delay)
             driver.find_element_by_link_text('Export data').click()
             break
         except TimeoutException:
-            delay += 1
+            pass
 
     # reset timeout to 10s
     driver.set_page_load_timeout(10)
