@@ -35,9 +35,9 @@ import constituents_utils as cu
 # http://scraping.pro/use-headless-firefox-scraping-linux/
 # main thing to do is install this first:
 # sudo apt-get install xvfb
-# from pyvirtualdisplay import Display
-# display = Display(visible=0, size=(1920, 1080))
-# display.start()
+from pyvirtualdisplay import Display
+display = Display(visible=0, size=(1920, 1080))
+display.start()
 
 FILEPATH = '/home/nate/Dropbox/data/sp600/'
 CONSTITUENT_FILEPATH = '/home/nate/Dropbox/data/barchart.com/'
@@ -173,12 +173,17 @@ def sign_in_investing_com(driver):
         pass
 
 
-def sign_in_barchart_com(driver):
+def sign_in_barchart_com(driver, uname=1):
     driver.get('https://www.barchart.com/login')
     # email = os.environ.get('barchart_username')
     # password = os.environ.get('barchart_pass')
-    email = os.environ.get('barchart_username2')
-    password = os.environ.get('barchart_pass2')
+    # TODO: if exceeded 5 downloads, switch to username2
+    if uname == 1:
+        email = os.environ.get('barchart_username')
+        password = os.environ.get('barchart_pass')
+    elif uname == 2:
+        email = os.environ.get('barchart_username2')
+        password = os.environ.get('barchart_pass2')
 
     if email is None or password is None:
         print('add email and pass to bashrc!! exiting.')
