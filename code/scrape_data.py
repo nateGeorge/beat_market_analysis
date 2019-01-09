@@ -472,11 +472,19 @@ def download_vioo_holdings(driver):
 
 
     # sometimes need to try again after waiting a few seconds
+    counter = 0
     while True:
+        # give up after 20 tries
+        if counter == 20:
+            break
         try:
+            counter += 1
+            # previous versions no longer working
             # driver.find_element_by_link_text('EXPORT DATA').click()
-            # driver.find_element_by_xpath("//button[contains(text(),'EXPORT DATA')]").click()
-            driver.find_element_by_xpath('/html/body/div[1]/main/div/div/div/portfolio/div/div[2]/holding-details/div/div/div/div[1]/div/data-ng-include/div[1]/div/div[2]/div/button').click()
+            # driver.find_element_by_link_text('Export Data').click()
+            # driver.find_element_by_xpath("//button[contains(text(),'Export Data')]").click()
+            # driver.find_element_by_xpath('/html/body/div[1]/main/div/div/div/portfolio/div/div[2]/holding-details/div/div/div/div[1]/div/data-ng-include/div[1]/div/div[2]/div/button').click()
+            driver.find_element_by_xpath("//a[contains(text(),'Export data')]").click()
             break
         except TimeoutException:
             pass
