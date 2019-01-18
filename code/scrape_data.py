@@ -91,7 +91,9 @@ def setup_driver():
     # download folder should be set to: ⁦/home/nate/Dropbox/data/sp600⁩
     prof_paths = ['/home/nate/.mozilla/firefox/exzvq4ez.investing.com',
                 # work computer path
-                '/home/nate/.mozilla/firefox/i12g875t.investing.com']
+                '/home/nate/.mozilla/firefox/i12g875t.investing.com',
+                # new work comp path
+                '/home/nate/.mozilla/firefox/j2xpg2cz.investing.com']
     found_prof = False
     for p in prof_paths:
         try:
@@ -121,7 +123,7 @@ def setup_driver():
     # # profile.set_preference('browser.download.dir', '/tmp')
     # profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'text/csv')
     # profile.set_preference('browser.helperApps.neverAsk.saveToDisk', '*')
-    driver = webdriver.Firefox(profile, executable_path='/home/nate/geckodriver')
+    driver = webdriver.Firefox(profile)
 
     # prevent broken pipe errors
     # https://stackoverflow.com/a/13974451/4549682
