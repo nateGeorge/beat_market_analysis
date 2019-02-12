@@ -35,9 +35,9 @@ import constituents_utils as cu
 # http://scraping.pro/use-headless-firefox-scraping-linux/
 # main thing to do is install this first:
 # sudo apt-get install xvfb
-# from pyvirtualdisplay import Display
-# display = Display(visible=0, size=(1920, 1080))
-# display.start()
+from pyvirtualdisplay import Display
+display = Display(visible=0, size=(1920, 1080))
+display.start()
 
 FILEPATH = '/home/nate/Dropbox/data/sp600/'
 CONSTITUENT_FILEPATH = '/home/nate/Dropbox/data/barchart.com/'
@@ -633,7 +633,7 @@ def daily_updater():
 
 
 if __name__ == '__main__':
-    pass# daily_updater()
+    daily_updater()
 
     # for source in ['barchart.com', 'investing.com']:
     #     if not check_if_files_exist(source=source):
