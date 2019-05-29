@@ -599,7 +599,10 @@ def daily_updater():
         elif index == 'SLY':
             download_sly_holdings(driver)
         elif index == 'VIOO':
-            download_vioo_holdings(driver)
+            # TODO: update VIOO download
+            # TODO: gracefully handle download failed errors
+            print('problem with VIOO download, skipping')
+            #download_vioo_holdings(driver)
         driver.quit()
 
     while True:
