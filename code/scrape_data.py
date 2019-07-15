@@ -175,7 +175,7 @@ def sign_in_investing_com(driver):
         pass
 
 
-def sign_in_barchart_com(driver, uname=1):
+def sign_in_barchart_com(driver, uname=2):
     driver.get('https://www.barchart.com/login')
     # email = os.environ.get('barchart_username')
     # password = os.environ.get('barchart_pass')
@@ -192,6 +192,7 @@ def sign_in_barchart_com(driver, uname=1):
         return
 
     try:
+        webdriver.ActionChains(driver).send_keys(Keys.ESCAPE).perform()
         driver.find_element_by_name('email').send_keys(email)
         driver.find_element_by_name('password').send_keys(password)
         time.sleep(1.2 + np.random.random())
@@ -224,7 +225,7 @@ def wait_for_data_download(filename=FILEPATH + 'S&P 600 Components.csv'):
     while not os.path.exists(filename):
         time.sleep(0.3)
         waited += 1
-        if waited == 1000:
+        if waited == 200:
             return False
 
     time.sleep(3)  # wait a bit longer to make sure it's fully downloaded;
@@ -350,6 +351,13 @@ def download_investing_com(driver):
         time.sleep(1.57 + np.random.random())
 
 
+def signout_in_barchart():
+    print('reached max downloads')
+    driver.find_element_by_class_name('bc-user-block__button.js-user-account-desktop').click()
+    driver.find_element_by_link_text('Log Out').click()
+    sign_in_barchart_com(driver, uname=2)
+
+
 def download_barchart_com(driver):
     """
     downloads sp600 constituents from barchart.com
@@ -375,6 +383,10 @@ def download_barchart_com(driver):
 
         while True:
             driver.find_element_by_class_name('toolbar-button.download').click()
+            # if reached max downloads
+            if driver.find_element_by_class_name('register-button') is not None:
+                signout_in_barchart()
+
             # TODO: rename to last active trading day (also for investing and others)
             filename = FILEPATH + 'sp-600-index-{}.csv'.format(todays_date_local)
             print('waiting for...' + filename)
@@ -557,6 +569,10 @@ def download_qqq_constituents(driver):
 
     while True:
         driver.find_element_by_class_name('toolbar-button.download').click()
+        # if reached max downloads
+        if driver.find_element_by_class_name('register-button') is not None:
+            signout_in_barchart()
+
         # TODO: update path -- I think it should be the dropbox folder (FILEPATH)
         filename = FILEPATH + 'etf-constituents-{}.csv'.format(todays_date_local)
         print('waiting for...' + filename)
@@ -610,7 +626,7 @@ def daily_updater():
             today_utc = pd.to_datetime('now')
             today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
             is_trading_day = check_if_today_trading_day()
-            for source in ['barchart.com', 'investing.com']:
+            for source in ['barchart.com']:#, 'investing.com']:  # investing.com seems to have gotten rid of their components for sp600
                 if not check_if_files_exist(source=source):
                     # if files not there, latest files are not today, and today is not a trading day...
                     up_to_date = today_ny.date() == cu.get_latest_daily_date(source).date()
@@ -637,6 +653,7 @@ def daily_updater():
 
 if __name__ == '__main__':
     daily_updater()
+    # pass
 
     # for source in ['barchart.com', 'investing.com']:
     #     if not check_if_files_exist(source=source):
