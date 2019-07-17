@@ -384,8 +384,11 @@ def download_barchart_com(driver):
         while True:
             driver.find_element_by_class_name('toolbar-button.download').click()
             # if reached max downloads
-            if driver.find_element_by_class_name('register-button') is not None:
-                signout_in_barchart()
+            try:
+                if driver.find_element_by_class_name('register-button') is not None:
+                    signout_in_barchart()
+            except:
+                pass
 
             # TODO: rename to last active trading day (also for investing and others)
             filename = FILEPATH + 'sp-600-index-{}.csv'.format(todays_date_local)
@@ -570,8 +573,11 @@ def download_qqq_constituents(driver):
     while True:
         driver.find_element_by_class_name('toolbar-button.download').click()
         # if reached max downloads
-        if driver.find_element_by_class_name('register-button') is not None:
-            signout_in_barchart()
+        try:
+            if driver.find_element_by_class_name('register-button') is not None:
+                signout_in_barchart()
+        except:
+            pass
 
         # TODO: update path -- I think it should be the dropbox folder (FILEPATH)
         filename = FILEPATH + 'etf-constituents-{}.csv'.format(todays_date_local)
