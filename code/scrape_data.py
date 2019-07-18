@@ -641,7 +641,7 @@ def daily_updater():
                     elif not up_to_date and today_ny.hour >= 20:
                         dl_source(source)
 
-            for index in ['IJR', 'SLY', 'VIOO']:
+            for index in ['IJR', 'SLY']:#, 'VIOO']:
                 if not check_if_index_files_exist(index):
                     latest_index_date = cu.get_latest_index_date(index)
                     up_to_date = latest_index_date.date() == today_ny.date()
