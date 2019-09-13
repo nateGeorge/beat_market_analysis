@@ -632,14 +632,14 @@ def daily_updater():
             today_utc = pd.to_datetime('now')
             today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
             is_trading_day = check_if_today_trading_day()
-            for source in ['barchart.com']:#, 'investing.com']:  # investing.com seems to have gotten rid of their components for sp600
-                if not check_if_files_exist(source=source):
-                    # if files not there, latest files are not today, and today is not a trading day...
-                    up_to_date = today_ny.date() == cu.get_latest_daily_date(source).date()
-                    if not up_to_date and not is_trading_day:
-                        dl_source(source)
-                    elif not up_to_date and today_ny.hour >= 20:
-                        dl_source(source)
+            # for source in ['barchart.com']:#, 'investing.com']:  # investing.com seems to have gotten rid of their components for sp600; barchart having issues currently
+            #     if not check_if_files_exist(source=source):
+            #         # if files not there, latest files are not today, and today is not a trading day...
+            #         up_to_date = today_ny.date() == cu.get_latest_daily_date(source).date()
+            #         if not up_to_date and not is_trading_day:
+            #             dl_source(source)
+            #         elif not up_to_date and today_ny.hour >= 20:
+            #             dl_source(source)
 
             for index in ['IJR', 'SLY']:#, 'VIOO']:
                 if not check_if_index_files_exist(index):
