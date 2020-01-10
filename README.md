@@ -1,7 +1,7 @@
 # beat_market_analysis
 This was an attempt to reproduce the results from this paper: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3184501
 
-The conclusion is that the paper is bogus, and the author has either purposefully or accidentally overfit a strategy to past data.  The idea is to buy the smallest market cap stocks from an index like the SP600.  The results of the paper of course show incredible results, and claim it's easy to beat the market.  However, there were additional parameters used to filter the stocks, so it's not nearly as simple as taking the smallest market cap stocks.  The additional filters were not specified, leading me to believe the author knowingly created a paper with sensational results yet faulty and dishonest analysis.
+The conclusion is that the paper is bogus, and the author has either purposefully or accidentally overfit a strategy to past data.  The idea is to buy the smallest market cap stocks from an index like the S&P600.  The results of the paper of course show incredible results, and claim it's easy to beat the market.  However, there were additional parameters used to filter the stocks, so it's not nearly as simple as taking the smallest market cap stocks.  The additional filters were not specified, leading me to believe the author knowingly created a paper with sensational results yet faulty and dishonest analysis.  That seems most likely, but it's also possible the author is somewhat incompetent and doesn't realize that you can easily overfit past stock price data with even a few filters.
 
 
 I originally discovered this analysis from this video: https://www.youtube.com/watch?v=7gbcEkiozCc&feature=youtu.be
