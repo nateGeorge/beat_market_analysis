@@ -35,9 +35,9 @@ import constituents_utils as cu
 # http://scraping.pro/use-headless-firefox-scraping-linux/
 # main thing to do is install this first:
 # sudo apt-get install xvfb
-from pyvirtualdisplay import Display
-display = Display(visible=0, size=(1920, 1080))
-display.start()
+# from pyvirtualdisplay import Display
+# display = Display(visible=0, size=(1920, 1080))
+# display.start()
 
 FILEPATH = '/home/nate/Dropbox/data/sp600/'
 CONSTITUENT_FILEPATH = '/home/nate/Dropbox/data/barchart.com/'
@@ -447,19 +447,39 @@ def download_sly_holdings(driver):
     print('downloading SLY data')
     latest_market_date = get_last_open_trading_day()
 
+
+
     driver.get('https://us.spdrs.com/en/etf/spdr-sp-600-small-cap-etf-SLY')
-    driver.find_element_by_xpath('//*[@id="detail"]/article/div[4]/ul/li[3]/a').click()
+    # need to get past initial screen asking what kind of investor you are
+    # choose individual investor
+    driver.find_element_by_xpath('//*[@id="individual"]/label/div').click()
+    time.sleep(0.2 + np.random.random())
+    # click accept
+    driver.find_element_by_xpath('//*[@id="js-ssmp-clrButtonLabel"]').click()
+    time.sleep(0.2 + np.random.random())
+
+
+    # click on tab for 'holdings'
+    driver.find_element_by_xpath('/html/body/div[2]/div/div/div[2]/div/div[4]/div[1]/ul/li[3]/a').click()
+    # driver.find_element_by_xpath('//*[@id="detail"]/article/div[4]/ul/li[3]/a').click()
     # driver.find_element_by_xpath('/html/body/main/article/div[3]/ul/li[3]/a').click()  # used to be how to get to 'holdings' tab, but broke
-    driver.find_element_by_xpath('//*[@id="holdings"]/div[1]/div[1]/section/div[2]/a').click()
+    time.sleep(0.2 + np.random.random())
+
+    # click button for 'Download All Holdings'
+    # file also at https://www.ssga.com/us/en/individual/etfs/library-content/products/fund-data/etfs/us/holdings-daily-us-en-sly.xlsx
+    # .get the page works, but has to timeout to work
+    # driver.get('https://www.ssga.com/us/en/individual/etfs/library-content/products/fund-data/etfs/us/holdings-daily-us-en-sly.xlsx')
+    driver.find_element_by_xpath('/html/body/div[2]/div/div/div[2]/div/div[4]/div[2]/div[3]/div/div[1]/div/div/div[3]/div[2]/div[1]/div/div/div/div/span[1]/a').click()
+    # driver.find_element_by_xpath('//*[@id="holdings"]/div[1]/div[1]/section/div[2]/a').click()
     # driver.find_element_by_xpath('/html/body/main/article/div[4]/div[3]/div[1]/div[1]/section/div[2]/a').click()
 
     # TODO: refactor this into a function
     datapath = FILEPATH + 'index_funds/SLY/'
     if not os.path.exists(datapath): (make_dirs(datapath))
-    src_filename = FILEPATH + 'SLY_All_Holdings.xls'
+    src_filename = FILEPATH + 'holdings-daily-us-en-sly.xlsx'# 'SLY_All_Holdings.xls'  # filename changed
     got_it = wait_for_data_download(src_filename)
     if got_it:
-        dst_filename =  datapath + 'SLY_holdings_' + latest_market_date + '.xls'
+        dst_filename =  datapath + 'SLY_holdings_' + latest_market_date + '.xlsx'
         shutil.move(src_filename, dst_filename)
         # sometimes source file seems to stick around...
         if os.path.exists(src_filename):
@@ -613,8 +633,7 @@ def daily_updater():
             download_qqq_constituents(driver)
         driver.quit()
 
-    def dl_idx(index):
-        driver = setup_driver()
+    def dl_idx(driver, index):
         print('downloading update for ' + index)
         if index == 'IJR':
             download_ijr_holdings(driver)
@@ -629,6 +648,7 @@ def daily_updater():
 
     while True:
         try:
+            driver = setup_driver()
             today_utc = pd.to_datetime('now')
             today_ny = datetime.datetime.now(pytz.timezone('America/New_York'))
             is_trading_day = check_if_today_trading_day()
@@ -646,15 +666,16 @@ def daily_updater():
                     latest_index_date = cu.get_latest_index_date(index)
                     up_to_date = latest_index_date.date() == today_ny.date()
                     if not up_to_date and not is_trading_day:
-                        dl_idx(index)
+                        dl_idx(driver, index)
                     elif not up_to_date and today_ny.hour >= 20:
-                        dl_idx(index)
+                        dl_idx(driver, index)
 
             print('sleeping 1h...')
             time.sleep(3600)
         except Exception as e:
             print(e)
             print(traceback.print_tb(e.__traceback__))
+            driver.quit()
 
 
 if __name__ == '__main__':
