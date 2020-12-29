@@ -39,8 +39,11 @@ from pyvirtualdisplay import Display
 display = Display(visible=0, size=(1920, 1080))
 display.start()
 
-FILEPATH = '/home/nate/Dropbox/data/sp600/'
-CONSTITUENT_FILEPATH = '/home/nate/Dropbox/data/barchart.com/'
+# FILEPATH = '/home/nate/Dropbox/data/sp600/'
+FILEPATH = '/media/nate/bigdata1/onedrive/data/sp600/'
+# CONSTITUENT_FILEPATH = '/home/nate/Dropbox/data/barchart.com/'
+CONSTITUENT_FILEPATH = '/media/nate/bigdata1/onedrive/data/barchart.com/'
+
 
 
 def make_dirs(path):
